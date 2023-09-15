@@ -78,6 +78,7 @@
 									<listOptionValue builtIn="false" value="CC23X0"/>
 									<listOptionValue builtIn="false" value="NVOCMP_NWSAMEITEM=1"/>
 									<listOptionValue builtIn="false" value="FLASH_ONLY_BUILD"/>
+									<listOptionValue builtIn="false" value="Display_DISABLE_ALL"/>
 									<listOptionValue builtIn="false" value="USE_RCL"/>
 									<listOptionValue builtIn="false" value="FREERTOS"/>
 									<listOptionValue builtIn="false" value="NVOCMP_POSIX_MUTEX"/>
