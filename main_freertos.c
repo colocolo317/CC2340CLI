@@ -74,6 +74,7 @@ icall_userCfg_t user0Cfg = BLE_USER_CFG;
 extern void appMain(void);
 extern void AssertHandler(uint8 assertCause, uint8 assertSubcause);
 extern void *mainThread(void *arg0);
+extern void *vCommandConsoleTask( void *pvParameters );
 
 /*******************************************************************************
  * @fn          Main
