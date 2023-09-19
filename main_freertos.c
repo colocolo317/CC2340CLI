@@ -18,9 +18,6 @@
  * INCLUDES
  */
 
-/* POSIX Header files */
-#include <pthread.h>
-
 /* RTOS header files */
 #include <FreeRTOS.h>
 #include <stdint.h>
@@ -34,6 +31,7 @@
 #include <ti/drivers/UART2.h>
 #include <ti/common/cc26xx/uartlog/UartLog.h>
 #include <ti/devices/DeviceFamily.h>
+
 
 #include <icall.h>
 #include "hal_assert.h"
@@ -72,8 +70,9 @@ icall_userCfg_t user0Cfg = BLE_USER_CFG;
  * EXTERNS
  */
 extern void appMain(void);
+extern void cli_init(void);
 extern void AssertHandler(uint8 assertCause, uint8 assertSubcause);
-extern void *mainThread(void *arg0);
+extern void uartConsoleStart(void);
 
 /*******************************************************************************
  * @fn          Main
@@ -98,37 +97,17 @@ int main()
 
   Board_init();
 
+  /* Set symbol controll here e.g. ifdef(USE_CLI) */
+  cli_init();
+
   /* Update User Configuration of the stack */
   user0Cfg.appServiceInfo->timerTickPeriod = ICall_getTickPeriod();
   user0Cfg.appServiceInfo->timerMaxMillisecond  = ICall_getMaxMSecs();
 
-  /* Initialize all applications tasks */
+  /* Initialize all applications tasks (ble app)*/
   appMain();
 
-  pthread_t thread;
-  pthread_attr_t attrs;
-  struct sched_param priParam;
-  int retc;
-  /* Initialize the attributes structure with default values */
-  pthread_attr_init(&attrs);
-
-  /* Set priority, detach state, and stack size attributes */
-  priParam.sched_priority = 1;
-  retc                    = pthread_attr_setschedparam(&attrs, &priParam);
-  retc |= pthread_attr_setdetachstate(&attrs, PTHREAD_CREATE_DETACHED);
-  retc |= pthread_attr_setstacksize(&attrs, THREADSTACKSIZE);
-  if (retc != 0)
-  {
-      /* failed to set attributes */
-      while (1) {}
-  }
-
-  retc = pthread_create(&thread, &attrs, mainThread, NULL);
-  if (retc != 0)
-  {
-      /* pthread_create() failed */
-      while (1) {}
-  }
+  uartConsoleStart();
 
   /* Start the FreeRTOS scheduler */
   vTaskStartScheduler();
