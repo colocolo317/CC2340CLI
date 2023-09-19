@@ -74,7 +74,6 @@ icall_userCfg_t user0Cfg = BLE_USER_CFG;
 extern void appMain(void);
 extern void AssertHandler(uint8 assertCause, uint8 assertSubcause);
 extern void *mainThread(void *arg0);
-extern void *vCommandConsoleTask( void *pvParameters );
 
 /*******************************************************************************
  * @fn          Main
@@ -93,11 +92,6 @@ extern void *vCommandConsoleTask( void *pvParameters );
  */
 int main()
 {
-    pthread_t thread;
-    pthread_attr_t attrs;
-    struct sched_param priParam;
-    int retc;
-
   /* Register Application callback to trap asserts raised in the Stack */
   halAssertCback = AssertHandler;
   RegisterAssertCback(AssertHandler);
@@ -111,7 +105,10 @@ int main()
   /* Initialize all applications tasks */
   appMain();
 
-
+  pthread_t thread;
+  pthread_attr_t attrs;
+  struct sched_param priParam;
+  int retc;
   /* Initialize the attributes structure with default values */
   pthread_attr_init(&attrs);
 
