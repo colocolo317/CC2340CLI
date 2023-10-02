@@ -24,6 +24,7 @@ $Release Date: PACKAGE RELEASE DATE $
 #include <ti/bleapp/ble_app_util/inc/bleapputil_api.h>
 #include <ti/bleapp/menu_module/menu_module.h>
 #include <app_main.h>
+#include <uart_api.h>
 
 //*****************************************************************************
 //! Defines
@@ -62,6 +63,8 @@ static DSP_cb_t ds_profileCB =
  * @param   cccUpdate - pointer to data structure used to store ccc update
  *
  * @return  SUCCESS or stack call status
+ *
+ * REMARK: UART RX to BLE char
  */
 static void DS_onCccUpdateCB( uint16 connHandle, uint16 pValue )
 {
@@ -89,6 +92,8 @@ static void DS_onCccUpdateCB( uint16 connHandle, uint16 pValue )
  * @param   dataIn - pointer to data structure used to store incoming data
  *
  * @return  SUCCESS or stack call status
+ *
+ * REMARK: BLE char to UART TX
  */
 static void DS_incomingDataCB( uint16 connHandle, char *pValue, uint16 len )
 {
@@ -133,6 +138,8 @@ static void DS_incomingDataCB( uint16 connHandle, char *pValue, uint16 len )
     MenuModule_printf(APP_MENU_PROFILE_STATUS_LINE2, 0,
                       "Data: " MENU_MODULE_COLOR_YELLOW "%s" MENU_MODULE_COLOR_RESET,
                       printData);
+
+    int_fast16_t uart_status =  uartTx_send((uint8*)pValue, len); // TODO: Finish UART streaming
 
     // Change upper case to lower case and lower case to upper case
     for ( i = 0; i < len; i++ )
@@ -182,6 +189,7 @@ bStatus_t DataStream_start( void )
 {
   bStatus_t status = SUCCESS;
 
+  // TODO: ds profile cb, ds server cb, tx, rx separate
   status = DSP_start( &ds_profileCB );
   if( status != SUCCESS )
   {

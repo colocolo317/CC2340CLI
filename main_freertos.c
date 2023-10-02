@@ -169,7 +169,7 @@ void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
  *
  * @return      None.
  */
-void AssertHandler(uint8_t assertCause, uint8_t assertSubcause)
+void AssertHandler(uint8 assertCause, uint8 assertSubcause)
 {
     Log_error2(">>>STACK ASSERT Cause 0x%02x subCause 0x%02x",
                assertCause, assertSubcause);

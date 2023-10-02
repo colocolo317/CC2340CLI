@@ -13,8 +13,9 @@
 #include "ble_stack_api.h"
 #include <ti/bleapp/ble_app_util/inc/bleapputil_api.h>
 #include <ti/bleapp/ble_app_util/inc/bleapputil_internal.h>
+#include <ti/bleapp/services/data_stream/data_stream_server.h>
 
-#define MAX_COMMAND_COUNT 3
+#define MAX_COMMAND_COUNT 4
 
 extern BLEAppUtil_TheardEntity_t BLEAppUtil_theardEntity;
 
@@ -28,6 +29,9 @@ static BaseType_t prvATpSTOPCommand( char *pcWriteBuffer,
                                           size_t xWriteBufferLen,
                                           const char *pcCommandString );
 static BaseType_t prvATpADDRCommand( char *pcWriteBuffer,
+                                          size_t xWriteBufferLen,
+                                          const char *pcCommandString );
+static BaseType_t prvATpNOTIFYCommand( char *pcWriteBuffer,
                                           size_t xWriteBufferLen,
                                           const char *pcCommandString );
 
@@ -45,12 +49,18 @@ void cli_init(void){
             "AT+STOP",
             "AT+STOP           : Stop BLE thread.\r\n",
             prvATpSTOPCommand,
-            0   // Could input role as argument
+            0
         },
         {
             "AT+ADDR",
             "AT+ADDR           : Get device address.\r\n",
             prvATpADDRCommand,
+            0
+        },
+        {
+            "AT+NOTIFY",
+            "AT+NOTIFY         : BLE send notify.\r\n",
+            prvATpNOTIFYCommand,
             0
         }
     };
@@ -94,5 +104,18 @@ static BaseType_t prvATpSTOPCommand( char *pcWriteBuffer,
 {
     pthread_cancel(BLEAppUtil_theardEntity.threadId);
     strcpy(pcWriteBuffer, "BLE stopped.");
+    return pdFALSE;
+}
+
+static BaseType_t prvATpNOTIFYCommand( char *pcWriteBuffer,
+                                          size_t xWriteBufferLen,
+                                          const char *pcCommandString )
+{
+    bStatus_t status = SUCCESS;
+    status = DSS_setParameter( DSS_DATAOUT_ID, "AT+NOTIFY", 9 );
+    if(status == SUCCESS)
+    {
+        strcpy(pcWriteBuffer, "BLE update characteristic.");
+    }
     return pdFALSE;
 }

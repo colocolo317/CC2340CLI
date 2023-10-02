@@ -6,40 +6,47 @@
  */
 #include <FreeRTOS.h>
 #include "FreeRTOS_CLI.h"
+#include <icall.h>
 /* POSIX Header files */
 #include <pthread.h>
 #include <string.h>
-/* POSIX Header files */
 #include <semaphore.h>
-
 /* Driver Header files */
-//#include <ti/drivers/GPIO.h>
 #include <ti/drivers/UART2.h>
-
+#include <ti/bleapp/profiles/data_stream/data_stream_profile.h>
+#include <ti/bleapp/services/data_stream/data_stream_server.h>
 /* Driver configuration */
 #include "ti_drivers_config.h"
+#include "icall_ble_api.h"
+
 
 /* Stack size in bytes */
 #define THREADSTACKSIZE 1024
 
 #define MAX_INPUT_LENGTH    50
 #define MAX_OUTPUT_LENGTH   100
-
+/* UART IO MODE for @VAR uUartIOMode */
 #define CLI_MODE            0x01    /* UART to commad line interface mode */
 #define BLE_STREAM_MODE     0x02    /* UART to BLE characteristic mode */
 
+/* === Global Variables ===*/
+uint8_t uUartIOMode = BLE_STREAM_MODE;
 
-uint8_t uUartIOMode = CLI_MODE;
-
+/* === Local Variables ===*/
 static sem_t sem;
 static volatile size_t numBytesRead;
+UART2_Handle handle;
+ICall_EntityID UARTICallEntityID;
 
-
-
+/* === Functions === */
 void uartConsoleStart(void);
+int_fast16_t uartTx_send(uint8 *pValue, uint16 len);
 void *uartConsoleThread(void *arg0);
 void uartRx_cb(UART2_Handle handle, void *buffer, size_t count, void *userArg, int_fast16_t status);
-void uartCliIOFxn(UART2_Handle uart);
+void uartCliIOFxn(UART2_Handle handle);
+void uarttoBleStreamFxn(UART2_Handle handle);
+uint8_t uart_processMsgCB(uint8_t event, uint8_t *pMessage);
+
 
 /*
  *  ======== callbackFxn ========
@@ -53,15 +60,17 @@ void uartRx_cb(UART2_Handle handle, void *buffer, size_t count, void *userArg, i
     sem_post(&sem);
 }
 
+
 void *uartConsoleThread(void *arg0)
 {
-    UART2_Handle uart;
+    // IMPORTANT: Task should register to ICall app to access BLE function
+    ICall_Errno icall_staus;
+    icall_staus = ICall_registerAppCback(&UARTICallEntityID, uart_processMsgCB); // handle maybe cannot be NULL
+
+    //UART2_Handle handle;
     UART2_Params uartParams;
     int32_t semStatus;
     uint32_t status = UART2_STATUS_SUCCESS;
-
-    //GPIO_init(); /* Call driver init functions */
-    //GPIO_setConfig(CONFIG_GPIO_LED_RED, GPIO_CFG_OUT_STD | GPIO_CFG_OUT_LOW); /* Configure the LED pin */
 
     semStatus = sem_init(&sem, 0, 0); /* Create semaphore */
 
@@ -74,21 +83,33 @@ void *uartConsoleThread(void *arg0)
     uartParams.readCallback = uartRx_cb;
     uartParams.baudRate     = 115200;
 
-    uart = UART2_open(CONFIG_DISPLAY_UART, &uartParams);
-    if (uart == NULL)
+    handle = UART2_open(CONFIG_DISPLAY_UART, &uartParams);
+    if (handle == NULL)
     { while (1) {} /* UART2_open() failed */ }
 
     switch(uUartIOMode)
     {
-    case BLE_STREAM_MODE:
-
-        break;
-    case CLI_MODE:
-    default:
-        uartCliIOFxn(uart);
-        break;
+        case BLE_STREAM_MODE:
+            uarttoBleStreamFxn(handle);
+            break;
+        case CLI_MODE:
+        default:
+            uartCliIOFxn(handle);
+            break;
     }
+}
 
+uint8_t uart_processMsgCB(uint8_t event, uint8_t *pMessage)
+{
+  // ignore the event
+  // Enqueue the msg in order to be excuted in the application context
+  //if (BLEAppUtil_enqueueMsg(BLEAPPUTIL_EVT_STACK_CALLBACK, pMessage) != SUCCESS)
+  //{
+  //    BLEAppUtil_free(pMessage);
+  //}
+
+  // Not safe to dealloc, the application BleAppUtil module will free the msg
+  return FALSE;
 }
 
 void uartConsoleStart(void)
@@ -113,7 +134,38 @@ void uartConsoleStart(void)
     { while (1) {} /* pthread_create() failed */ }
 }
 
-void uartCliIOFxn(UART2_Handle uart)
+void uarttoBleStreamFxn(UART2_Handle handle)
+{
+    char cRxedChar;
+    uint32_t status = UART2_STATUS_SUCCESS;
+    uint8 bleStatus = SUCCESS;
+    static const char * const pcBleMessage = "BLE streaming start. Your input in UART is output to BLE.\r\n";
+    status = UART2_write(handle, pcBleMessage, strlen( pcBleMessage ), NULL);
+
+    while (1)
+    {
+        numBytesRead = 0;
+        status = UART2_read(handle, &cRxedChar, 1, NULL);
+        if (status != UART2_STATUS_SUCCESS)
+        { /* UART2_read() failed */ while (1) {} }
+
+        sem_wait(&sem); /* Do not write until read callback executes */
+
+        if (numBytesRead > 0)
+        {
+            //TODO: send to BLE characteristic
+            //FIXME: DSP_sendData should be called through callbacks.
+            bleStatus = DSS_setParameter( DSS_DATAOUT_ID, &cRxedChar, 1 );
+
+
+            if(bleStatus){
+                status = UART2_write(handle, "true", 4, NULL);
+            }
+        }
+    }
+}
+
+void uartCliIOFxn(UART2_Handle handle)
 {
     const char breakLine[] = "\r\n";
     const char backspace[] = " \b";
@@ -124,14 +176,14 @@ void uartCliIOFxn(UART2_Handle uart)
     uint32_t status = UART2_STATUS_SUCCESS;
     static const char * const pcCliMessage = "FreeRTOS command line interface.\r\nType help to view a list of registered commands.\r\n";
     /* Pass NULL for bytesWritten since it's not used in this example */
-    status = UART2_write(uart, pcCliMessage, strlen( pcCliMessage ), NULL);
+    status = UART2_write(handle, pcCliMessage, strlen( pcCliMessage ), NULL);
 
     /* Loop forever echoing */
     while (1)
     {
         numBytesRead = 0;
         /* Pass NULL for bytesRead since it's not used in this example */
-        status = UART2_read(uart, &cRxedChar, 1, NULL);
+        status = UART2_read(handle, &cRxedChar, 1, NULL);
 
         if (status != UART2_STATUS_SUCCESS)
         { /* UART2_read() failed */ while (1) {} }
@@ -140,10 +192,10 @@ void uartCliIOFxn(UART2_Handle uart)
 
         if (numBytesRead > 0)
         {
-            status = UART2_write(uart, &cRxedChar, 1, NULL);
+            status = UART2_write(handle, &cRxedChar, 1, NULL);
             if(cRxedChar == '\r' || cRxedChar == '\n')
             {
-                status = UART2_write(uart, breakLine, 2, NULL);
+                status = UART2_write(handle, breakLine, 2, NULL);
                 do{
                     // Send the command string to the command interpreter.
                     xMoreDataToFollow = FreeRTOS_CLIProcessCommand(
@@ -152,10 +204,10 @@ void uartCliIOFxn(UART2_Handle uart)
                                       MAX_OUTPUT_LENGTH //The size of the output buffer.
                                   );
                     // Write the output generated by the command interpreter to the console.
-                    status = UART2_write( uart, pcOutputString, strlen( pcOutputString ), NULL);
+                    status = UART2_write( handle, pcOutputString, strlen( pcOutputString ), NULL);
                 } while( xMoreDataToFollow != pdFALSE );
 
-                status = UART2_write(uart, breakLine, 2, NULL);
+                status = UART2_write(handle, breakLine, 2, NULL);
                 cInputIndex = 0;
                 memset( pcInputString, 0x00, MAX_INPUT_LENGTH );
             }
@@ -168,7 +220,7 @@ void uartCliIOFxn(UART2_Handle uart)
                         cInputIndex--;
                         pcInputString[ cInputIndex ] = ' ';
                     }
-                    status = UART2_write(uart, backspace, 2, NULL);
+                    status = UART2_write(handle, backspace, 2, NULL);
                 }
                 else
                 {
@@ -184,5 +236,11 @@ void uartCliIOFxn(UART2_Handle uart)
             { while (1) {} /* UART2_write() failed */ }
         }
     }
+}
+
+int_fast16_t uartTx_send(uint8 *pValue, uint16 len)
+{
+    //DSS_setParameter( DSS_DATAOUT_ID, pValue, len );
+    return UART2_write(handle, pValue, len, NULL);
 }
 
