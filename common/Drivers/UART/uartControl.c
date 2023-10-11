@@ -1,7 +1,7 @@
 /*
  * uartControl.c
  *
- *  Created on: 2023¦~9¤ë25¤é
+ *  Created on: 2023/09/25
  *      Author: ch.wang
  */
 #include <FreeRTOS.h>
@@ -31,6 +31,7 @@
 
 /* === Global Variables ===*/
 uint8_t uUartIOMode = BLE_STREAM_MODE;
+uint8_t rxBuffer[MAX_INPUT_LENGTH];
 
 /* === Local Variables ===*/
 static sem_t sem;
@@ -136,7 +137,6 @@ void uartConsoleStart(void)
 
 void uarttoBleStreamFxn(UART2_Handle handle)
 {
-    char cRxedChar;
     uint32_t status = UART2_STATUS_SUCCESS;
     uint8 bleStatus = SUCCESS;
     static const char * const pcBleMessage = "BLE streaming start. Your input in UART is output to BLE.\r\n";
@@ -145,7 +145,7 @@ void uarttoBleStreamFxn(UART2_Handle handle)
     while (1)
     {
         numBytesRead = 0;
-        status = UART2_read(handle, &cRxedChar, 1, NULL);
+        status = UART2_read(handle, rxBuffer, MAX_INPUT_LENGTH, NULL);
         if (status != UART2_STATUS_SUCCESS)
         { /* UART2_read() failed */ while (1) {} }
 
@@ -153,14 +153,11 @@ void uarttoBleStreamFxn(UART2_Handle handle)
 
         if (numBytesRead > 0)
         {
-            //TODO: send to BLE characteristic
-            //FIXME: DSP_sendData should be called through callbacks.
-            bleStatus = DSS_setParameter( DSS_DATAOUT_ID, &cRxedChar, 1 );
+            // send to BLE characteristic
+            bleStatus = DSS_setParameter( DSS_DATAOUT_ID, rxBuffer, numBytesRead );
 
-
-            if(bleStatus){
-                status = UART2_write(handle, "true", 4, NULL);
-            }
+            if(bleStatus != SUCCESS)
+            { /* DSS_setParameter() failed */ while (1) {} }
         }
     }
 }
@@ -240,7 +237,6 @@ void uartCliIOFxn(UART2_Handle handle)
 
 int_fast16_t uartTx_send(uint8 *pValue, uint16 len)
 {
-    //DSS_setParameter( DSS_DATAOUT_ID, pValue, len );
     return UART2_write(handle, pValue, len, NULL);
 }
 
