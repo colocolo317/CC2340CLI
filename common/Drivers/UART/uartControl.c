@@ -18,6 +18,7 @@
 /* Driver configuration */
 #include "ti_drivers_config.h"
 #include "icall_ble_api.h"
+#include "uart_api.h"
 
 
 /* Stack size in bytes */
@@ -30,7 +31,7 @@
 #define BLE_STREAM_MODE     0x02    /* UART to BLE characteristic mode */
 
 /* === Global Variables ===*/
-uint8_t uUartIOMode = BLE_STREAM_MODE;
+uint8_t uUartIOMode = CLI_MODE;
 uint8_t rxBuffer[MAX_INPUT_LENGTH];
 
 /* === Local Variables ===*/
@@ -38,15 +39,17 @@ static sem_t sem;
 static volatile size_t numBytesRead;
 UART2_Handle handle;
 ICall_EntityID UARTICallEntityID;
+static uint8 uart_echo_onoff = UART_ECHO;
 
 /* === Functions === */
 void uartConsoleStart(void);
-int_fast16_t uartTx_send(uint8 *pValue, uint16 len);
 void *uartConsoleThread(void *arg0);
 void uartRx_cb(UART2_Handle handle, void *buffer, size_t count, void *userArg, int_fast16_t status);
 void uartCliIOFxn(UART2_Handle handle);
 void uarttoBleStreamFxn(UART2_Handle handle);
 uint8_t uart_processMsgCB(uint8_t event, uint8_t *pMessage);
+
+static int_fast16_t uartTx_echo(UART2_Handle handle, const void* pValue, size_t len , size_t *bytesWritten);
 
 
 /*
@@ -171,7 +174,7 @@ void uartCliIOFxn(UART2_Handle handle)
     int8_t cInputIndex = 0;
     BaseType_t xMoreDataToFollow;
     uint32_t status = UART2_STATUS_SUCCESS;
-    static const char * const pcCliMessage = "FreeRTOS command line interface.\r\nType help to view a list of registered commands.\r\n";
+    static const char * const pcCliMessage = "FreeRTOS command line interface.\r\nType HELP to view a list of registered commands.\r\n";
     /* Pass NULL for bytesWritten since it's not used in this example */
     status = UART2_write(handle, pcCliMessage, strlen( pcCliMessage ), NULL);
 
@@ -189,10 +192,10 @@ void uartCliIOFxn(UART2_Handle handle)
 
         if (numBytesRead > 0)
         {
-            status = UART2_write(handle, &cRxedChar, 1, NULL);
+            status = uartTx_echo(handle, &cRxedChar, 1, NULL);
             if(cRxedChar == '\r' || cRxedChar == '\n')
             {
-                status = UART2_write(handle, breakLine, 2, NULL);
+                status = uartTx_echo(handle, breakLine, 2, NULL);
                 do{
                     // Send the command string to the command interpreter.
                     xMoreDataToFollow = FreeRTOS_CLIProcessCommand(
@@ -217,7 +220,7 @@ void uartCliIOFxn(UART2_Handle handle)
                         cInputIndex--;
                         pcInputString[ cInputIndex ] = ' ';
                     }
-                    status = UART2_write(handle, backspace, 2, NULL);
+                    status = uartTx_echo(handle, backspace, 2, NULL);
                 }
                 else
                 {
@@ -240,3 +243,28 @@ int_fast16_t uartTx_send(uint8 *pValue, uint16 len)
     return UART2_write(handle, pValue, len, NULL);
 }
 
+static int_fast16_t uartTx_echo(UART2_Handle handle, const void* pValue, size_t len , size_t *bytesWritten)
+{
+    if(uart_echo_onoff)
+    {
+        return UART2_write(handle, pValue, len, NULL);
+    }
+    return 0;
+}
+
+bStatus_t uartSetEchoOnOff(uint8 onOff)
+{
+    bStatus_t status = SUCCESS;
+
+    switch(onOff)
+    {
+    case UART_NO_ECHO:
+    case UART_ECHO:
+        uart_echo_onoff = onOff;
+        break;
+    default:
+        status = FAILURE;
+    }
+
+    return status;
+}

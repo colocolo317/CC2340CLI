@@ -103,8 +103,8 @@ static uint8 devInfoSerialNumber[DEVINFO_STR_ATTR_LEN+1] = "Serial Number";
 
 // Firmware Revision String characteristic
 static uint8 devInfoFirmwareRevProps = GATT_PROP_READ;
-static uint8 devInfoFirmwareRev[DEVINFO_STR_ATTR_LEN+1] = "1.00.00.234001";
-// TODO: Last modify started: 20231006
+static uint8 devInfoFirmwareRev[DEVINFO_STR_ATTR_LEN+1] = "0.00.01.234101";
+// TODO: Last modify started: 20231012
 
 // Hardware Revision String characteristic
 static uint8 devInfoHardwareRevProps = GATT_PROP_READ;
@@ -125,7 +125,7 @@ static uint8 defaultDevInfo11073Cert[] =
   DEVINFO_11073_BODY_EXP,     // authoritative body type
   0x00,                       // authoritative body structure type
                               // authoritative body data follows below:
-  'e', 'x', 'p', 'e', 'r', 'i', 'm', 'e', 'n', 't', 'a', 'l'
+  'A', 'M', 'P', 'A', 'K', '-', 'W', 'L', '7', '3', '4', '0'
 };
 
 // The length of this characteristic is not fixed

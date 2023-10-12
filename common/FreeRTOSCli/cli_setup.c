@@ -14,64 +14,194 @@
 #include <ti/bleapp/ble_app_util/inc/bleapputil_api.h>
 #include <ti/bleapp/ble_app_util/inc/bleapputil_internal.h>
 #include <ti/bleapp/services/data_stream/data_stream_server.h>
+#include <common/Drivers/UART/uart_api.h>
 
-#define MAX_COMMAND_COUNT 4
+//#define MAX_COMMAND_COUNT 4
 
 extern BLEAppUtil_TheardEntity_t BLEAppUtil_theardEntity;
 
 //extern void appMain(void);
 extern int BLEAppUtil_createBLEAppUtilTask(void);
 
-static BaseType_t prvATpSTARTCommand( char *pcWriteBuffer,
+static inline void cli_writeError(char *pcWriteBuffer){ strcpy(pcWriteBuffer, "\r\nERROR\r\n"); }
+
+static inline void cli_writeOK(char *pcWriteBuffer){ strcpy(pcWriteBuffer, "\r\nOK\r\n"); }
+
+static BaseType_t prvAT_ECHOfxn( char *pcWriteBuffer,
                                           size_t xWriteBufferLen,
                                           const char *pcCommandString );
-static BaseType_t prvATpSTOPCommand( char *pcWriteBuffer,
+static BaseType_t prvAT_BLESTARTfxn( char *pcWriteBuffer,
                                           size_t xWriteBufferLen,
                                           const char *pcCommandString );
-static BaseType_t prvATpADDRCommand( char *pcWriteBuffer,
+static BaseType_t prvAT_BLEADDRfxn( char *pcWriteBuffer,
                                           size_t xWriteBufferLen,
                                           const char *pcCommandString );
-static BaseType_t prvATpNOTIFYCommand( char *pcWriteBuffer,
+static BaseType_t prvAT_BLENAMEfxn( char *pcWriteBuffer,
+                                        size_t xWriteBufferLen,
+                                        const char *pcCommandString );
+static BaseType_t prvAT_VERSIONfxn( char *pcWriteBuffer,
+                                        size_t xWriteBufferLen,
+                                        const char *pcCommandString );
+static BaseType_t prvAT_BLETRANMODEfxn( char *pcWriteBuffer,
+                                        size_t xWriteBufferLen,
+                                        const char *pcCommandString );
+static BaseType_t prvSTOPTRANMODEfxn( char *pcWriteBuffer,
+                                        size_t xWriteBufferLen,
+                                        const char *pcCommandString ); // "+++" command
+static BaseType_t prvAT_BLEGATTSNTFYfxn( char *pcWriteBuffer,
                                           size_t xWriteBufferLen,
                                           const char *pcCommandString );
+static BaseType_t prvAT_BLEDISCONNfxn( char *pcWriteBuffer,
+                                        size_t xWriteBufferLen,
+                                        const char *pcCommandString );
+static BaseType_t prvAT_BLESTATfxn( char *pcWriteBuffer,
+                                    size_t xWriteBufferLen,
+                                    const char *pcCommandString );
+static BaseType_t prvAT_RSTfxn( char *pcWriteBuffer,
+                                size_t xWriteBufferLen,
+                                const char *pcCommandString );
+static BaseType_t prvAT_BLESTOPfxn( char *pcWriteBuffer,
+                                      size_t xWriteBufferLen,
+                                      const char *pcCommandString ); // none-use
 
 void cli_init(void){
-    uint8_t i;
-    static const CLI_Command_Definition_t xTasksCommand[MAX_COMMAND_COUNT] =
+    int i;
+    static const CLI_Command_Definition_t xTasksCommand[] =
     {
-        {
-            "AT+START",
-            "AT+START          : Start BLE thread.\r\n",
-            prvATpSTARTCommand,
+         {
+            "AT+ECHO",
+            "AT+ECHO           : \r\n",
+            prvAT_ECHOfxn,
+            1
+         },
+         {
+            "AT+BLESTART",
+            "AT+BLESTART       : Start BLE thread.\r\n",
+            prvAT_BLESTARTfxn,
             0   // Could input role as argument
         },
         {
-            "AT+STOP",
-            "AT+STOP           : Stop BLE thread.\r\n",
-            prvATpSTOPCommand,
+            "AT+BLEADDR",
+            "AT+BLEADDR        : Get device address.\r\n",
+            prvAT_BLEADDRfxn,
             0
         },
         {
-            "AT+ADDR",
-            "AT+ADDR           : Get device address.\r\n",
-            prvATpADDRCommand,
+            "AT+BLENAME",
+            "AT+BLENAME        : Get BLE name.\r\n",
+            prvAT_BLENAMEfxn,
             0
         },
         {
-            "AT+NOTIFY",
-            "AT+NOTIFY         : BLE send notify.\r\n",
-            prvATpNOTIFYCommand,
+            "AT+VERSION",
+            "AT+VERSION        : Get firmware version\r\n",
+            prvAT_VERSIONfxn,
+            0
+        },
+        {
+            "AT+BLETRANMODE",
+            "AT+BLETRANMODE    : \r\n",
+            prvAT_BLETRANMODEfxn,
+            0
+        },
+        {
+            "+++",
+            "+++               : \r\n",
+            prvSTOPTRANMODEfxn,
+            0
+        },
+        {
+            "AT+BLEGATTSNTFY",
+            "AT+BLEGATTSNTFY   : \r\n",
+            prvAT_BLEGATTSNTFYfxn,
+            0
+        },
+        {
+            "AT+BLEDISCONN",
+            "AT+BLEDISCONN     : \r\n",
+            prvAT_BLEDISCONNfxn,
+            0
+        },
+        {
+            "AT+BLESTAT",
+            "AT+BLESTAT        : \r\n",
+            prvAT_BLESTATfxn,
+            0
+        },
+        {
+            "AT+RST",
+            "AT+RST            : \r\n",
+            prvAT_RSTfxn,
             0
         }
     };
 
-    for(i = 0; i < MAX_COMMAND_COUNT; i++)
+    int cmd_list_len = sizeof(xTasksCommand) / sizeof(CLI_Command_Definition_t);
+
+    for(i = 0; i < cmd_list_len; i++)
     {
         FreeRTOS_CLIRegisterCommand( &xTasksCommand[i] );
     }
 }
 
-static BaseType_t prvATpADDRCommand( char *pcWriteBuffer,
+
+static BaseType_t prvAT_ECHOfxn( char *pcWriteBuffer,
+                                          size_t xWriteBufferLen,
+                                          const char *pcCommandString )
+{
+    const char *pcParameter1;
+    BaseType_t xParameter1StringLength;
+    pcParameter1 = FreeRTOS_CLIGetParameter(pcCommandString, 1, &xParameter1StringLength);
+
+    // (pcParameter1 == NULL) will be deal with default no parameter error.
+    // parameter length should stick to 1
+    if(xParameter1StringLength > 1)
+    {
+        cli_writeError(pcWriteBuffer);
+        return pdFALSE;
+    }
+
+    bStatus_t ret = SUCCESS;
+    switch(*pcParameter1)
+    {
+    case '0':
+        ret = uartSetEchoOnOff(0);
+        break;
+    case '1':
+        ret = uartSetEchoOnOff(1);
+        break;
+    default:
+        cli_writeError(pcWriteBuffer);
+        return pdFALSE;
+    }
+
+    if(ret != SUCCESS)
+    {
+        // Fail to set echo flag
+        cli_writeError(pcWriteBuffer);
+        return pdFALSE;
+    }
+
+    cli_writeOK(pcWriteBuffer);
+    return pdFALSE;
+}
+static BaseType_t prvAT_BLESTARTfxn( char *pcWriteBuffer,
+                                          size_t xWriteBufferLen,
+                                          const char *pcCommandString )
+{
+    // output buffer is large enough so the xWriteBufferLen parameter is not used.
+    ( void ) xWriteBufferLen;
+
+    // FIXME: If BLE is running. Should not call create task again.
+    int ret = BLEAppUtil_createBLEAppUtilTask();
+    // written directly into the output buffer.
+    //strcpy(pcWriteBuffer, "BLE peripheral start.");
+    cli_writeOK(pcWriteBuffer);
+
+    // no further output string, so return pdFALSE.
+    return pdFALSE;
+}
+static BaseType_t prvAT_BLEADDRfxn( char *pcWriteBuffer,
                                           size_t xWriteBufferLen,
                                           const char *pcCommandString )
 {
@@ -81,33 +211,31 @@ static BaseType_t prvATpADDRCommand( char *pcWriteBuffer,
     strcpy(pcWriteBuffer, strAddr);
     return pdFALSE;
 }
-
-static BaseType_t prvATpSTARTCommand( char *pcWriteBuffer,
-                                          size_t xWriteBufferLen,
-                                          const char *pcCommandString )
+static BaseType_t prvAT_BLENAMEfxn( char *pcWriteBuffer,
+                                        size_t xWriteBufferLen,
+                                        const char *pcCommandString )
 {
-    /* output buffer is large enough
-    so the xWriteBufferLen parameter is not used. */
-    ( void ) xWriteBufferLen;
-
-    int ret = BLEAppUtil_createBLEAppUtilTask();
-    /* written directly into the output buffer. */
-    strcpy(pcWriteBuffer, "BLE started.");
-
-    /* no further output string, so return pdFALSE. */
     return pdFALSE;
 }
-
-static BaseType_t prvATpSTOPCommand( char *pcWriteBuffer,
-                                          size_t xWriteBufferLen,
-                                          const char *pcCommandString )
+static BaseType_t prvAT_VERSIONfxn( char *pcWriteBuffer,
+                                        size_t xWriteBufferLen,
+                                        const char *pcCommandString )
 {
-    pthread_cancel(BLEAppUtil_theardEntity.threadId);
-    strcpy(pcWriteBuffer, "BLE stopped.");
     return pdFALSE;
 }
-
-static BaseType_t prvATpNOTIFYCommand( char *pcWriteBuffer,
+static BaseType_t prvAT_BLETRANMODEfxn( char *pcWriteBuffer,
+                                        size_t xWriteBufferLen,
+                                        const char *pcCommandString )
+{
+    return pdFALSE;
+}
+static BaseType_t prvSTOPTRANMODEfxn( char *pcWriteBuffer,
+                                        size_t xWriteBufferLen,
+                                        const char *pcCommandString )
+{
+    return pdFALSE;
+}
+static BaseType_t prvAT_BLEGATTSNTFYfxn( char *pcWriteBuffer,
                                           size_t xWriteBufferLen,
                                           const char *pcCommandString )
 {
@@ -117,5 +245,31 @@ static BaseType_t prvATpNOTIFYCommand( char *pcWriteBuffer,
     {
         strcpy(pcWriteBuffer, "BLE update characteristic.");
     }
+    return pdFALSE;
+}
+static BaseType_t prvAT_BLEDISCONNfxn( char *pcWriteBuffer,
+                                        size_t xWriteBufferLen,
+                                        const char *pcCommandString )
+{
+    return pdFALSE;
+}
+static BaseType_t prvAT_BLESTATfxn( char *pcWriteBuffer,
+                                    size_t xWriteBufferLen,
+                                    const char *pcCommandString )
+{
+    return pdFALSE;
+}
+static BaseType_t prvAT_RSTfxn( char *pcWriteBuffer,
+                                size_t xWriteBufferLen,
+                                const char *pcCommandString )
+{
+    return pdFALSE;
+}
+static BaseType_t prvAT_BLESTOPfxn( char *pcWriteBuffer,
+                                          size_t xWriteBufferLen,
+                                          const char *pcCommandString )
+{
+    pthread_cancel(BLEAppUtil_theardEntity.threadId);
+    strcpy(pcWriteBuffer, "BLE stopped.");
     return pdFALSE;
 }
