@@ -15,6 +15,8 @@
 #include <ti/bleapp/ble_app_util/inc/bleapputil_internal.h>
 #include <ti/bleapp/services/data_stream/data_stream_server.h>
 #include <common/Drivers/UART/uart_api.h>
+#include <common/Services/dev_info/dev_info_service.h>
+#include <gapgattserver.h>
 
 //#define MAX_COMMAND_COUNT 4
 
@@ -26,6 +28,13 @@ extern int BLEAppUtil_createBLEAppUtilTask(void);
 static inline void cli_writeError(char *pcWriteBuffer){ strcpy(pcWriteBuffer, "\r\nERROR\r\n"); }
 
 static inline void cli_writeOK(char *pcWriteBuffer){ strcpy(pcWriteBuffer, "\r\nOK\r\n"); }
+
+static inline void cli_writeRsp(char *pcWriteBuffer, const char* val, size_t len)
+{
+    strcpy(pcWriteBuffer, "\r\n");
+    strncat(pcWriteBuffer, val, len);
+    strncat(pcWriteBuffer, "\r\n", strlen("\r\n"));
+}
 
 static BaseType_t prvAT_ECHOfxn( char *pcWriteBuffer,
                                           size_t xWriteBufferLen,
@@ -106,7 +115,7 @@ void cli_init(void){
         },
         {
             "+++",
-            "+++               : \r\n",
+            "",         // hide from command list.
             prvSTOPTRANMODEfxn,
             0
         },
@@ -189,14 +198,27 @@ static BaseType_t prvAT_BLESTARTfxn( char *pcWriteBuffer,
                                           size_t xWriteBufferLen,
                                           const char *pcCommandString )
 {
+    int ret = SUCCESS;
     // output buffer is large enough so the xWriteBufferLen parameter is not used.
     ( void ) xWriteBufferLen;
 
-    // FIXME: If BLE is running. Should not call create task again.
-    int ret = BLEAppUtil_createBLEAppUtilTask();
+    // BLE is running. Should not call create task API.
+    if (BLEAppUtil_theardEntity.threadId != NULL)
+    {
+        cli_writeError(pcWriteBuffer);
+        return pdFALSE;
+    }
+
+    ret = BLEAppUtil_createBLEAppUtilTask();
+    if(ret != SUCCESS)
+    {
+        cli_writeError(pcWriteBuffer);
+        return pdFALSE;
+    }
+
+    cli_writeOK(pcWriteBuffer);
     // written directly into the output buffer.
     //strcpy(pcWriteBuffer, "BLE peripheral start.");
-    cli_writeOK(pcWriteBuffer);
 
     // no further output string, so return pdFALSE.
     return pdFALSE;
@@ -208,19 +230,47 @@ static BaseType_t prvAT_BLEADDRfxn( char *pcWriteBuffer,
     uint8_t getAddr[6] = {0};
     bleStk_getDevAddr(TRUE, getAddr);
     char* strAddr = BLEAppUtil_convertBdAddr2Str(getAddr);
-    strcpy(pcWriteBuffer, strAddr);
+
+    cli_writeRsp(pcWriteBuffer, strAddr, 2*B_ADDR_LEN+3);
+
     return pdFALSE;
 }
 static BaseType_t prvAT_BLENAMEfxn( char *pcWriteBuffer,
                                         size_t xWriteBufferLen,
                                         const char *pcCommandString )
 {
+    uint32 status = SUCCESS;
+    char buffer[GAP_DEVICE_NAME_LEN];
+    memset(buffer, 0x00, GAP_DEVICE_NAME_LEN);
+
+    status = GGS_GetParameter(GGS_DEVICE_NAME_ATT, buffer);
+
+    if(status != SUCCESS)
+    {
+        cli_writeError(pcWriteBuffer);
+        return pdFALSE;
+    }
+
+    cli_writeRsp(pcWriteBuffer, buffer, GAP_DEVICE_NAME_LEN);
     return pdFALSE;
 }
 static BaseType_t prvAT_VERSIONfxn( char *pcWriteBuffer,
                                         size_t xWriteBufferLen,
                                         const char *pcCommandString )
 {
+    bStatus_t status = SUCCESS;
+    char buffer[DEVINFO_STR_ATTR_LEN+1];
+    memset(buffer, 0x00, DEVINFO_STR_ATTR_LEN+1);
+
+    status = DevInfo_getParameter(DEVINFO_FIRMWARE_REV, buffer);
+
+    if(status != SUCCESS)
+    {
+        cli_writeError(pcWriteBuffer);
+        return pdFALSE;
+    }
+
+    cli_writeRsp(pcWriteBuffer, buffer, DEVINFO_STR_ATTR_LEN+1);
     return pdFALSE;
 }
 static BaseType_t prvAT_BLETRANMODEfxn( char *pcWriteBuffer,
@@ -243,7 +293,7 @@ static BaseType_t prvAT_BLEGATTSNTFYfxn( char *pcWriteBuffer,
     status = DSS_setParameter( DSS_DATAOUT_ID, "AT+NOTIFY", 9 );
     if(status == SUCCESS)
     {
-        strcpy(pcWriteBuffer, "BLE update characteristic.");
+        strcpy(pcWriteBuffer, "\r\nBLE update characteristic.\r\n");
     }
     return pdFALSE;
 }

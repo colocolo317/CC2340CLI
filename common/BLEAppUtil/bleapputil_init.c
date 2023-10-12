@@ -37,7 +37,7 @@ $Release Date: PACKAGE RELEASE DATE $
 /*********************************************************************
 * GLOBAL VARIABLES
 */
-BLEAppUtil_TheardEntity_t BLEAppUtil_theardEntity;
+BLEAppUtil_TheardEntity_t BLEAppUtil_theardEntity = {NULL, NULL};
 
 /*********************************************************************
 * LOCAL VARIABLES

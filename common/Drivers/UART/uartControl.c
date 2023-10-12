@@ -127,7 +127,7 @@ void uartConsoleStart(void)
 
     /* Set priority, detach state, and stack size attributes */
     priParam.sched_priority = 1;
-    retc                    = pthread_attr_setschedparam(&attrs, &priParam);
+    retc  = pthread_attr_setschedparam(&attrs, &priParam);
     retc |= pthread_attr_setdetachstate(&attrs, PTHREAD_CREATE_DETACHED);
     retc |= pthread_attr_setstacksize(&attrs, THREADSTACKSIZE);
     if (retc != 0)
@@ -142,7 +142,7 @@ void uarttoBleStreamFxn(UART2_Handle handle)
 {
     uint32_t status = UART2_STATUS_SUCCESS;
     uint8 bleStatus = SUCCESS;
-    static const char * const pcBleMessage = "BLE streaming start. Your input in UART is output to BLE.\r\n";
+    static const char * const pcBleMessage = "\r\nBLE streaming start. Your input in UART is output to BLE.\r\n";
     status = UART2_write(handle, pcBleMessage, strlen( pcBleMessage ), NULL);
 
     while (1)
@@ -168,13 +168,13 @@ void uarttoBleStreamFxn(UART2_Handle handle)
 void uartCliIOFxn(UART2_Handle handle)
 {
     const char breakLine[] = "\r\n";
-    const char backspace[] = " \b";
+    const char backspace[] = "\b \b";
     char cRxedChar;
     static char pcOutputString[ MAX_OUTPUT_LENGTH ], pcInputString[ MAX_INPUT_LENGTH ];
     int8_t cInputIndex = 0;
     BaseType_t xMoreDataToFollow;
     uint32_t status = UART2_STATUS_SUCCESS;
-    static const char * const pcCliMessage = "FreeRTOS command line interface.\r\nType HELP to view a list of registered commands.\r\n";
+    static const char * const pcCliMessage = "\r\nAmpak WL71340 AT-Command interface.\r\nType \"HELP\" to view a list of registered commands.\r\n";
     /* Pass NULL for bytesWritten since it's not used in this example */
     status = UART2_write(handle, pcCliMessage, strlen( pcCliMessage ), NULL);
 
@@ -192,7 +192,6 @@ void uartCliIOFxn(UART2_Handle handle)
 
         if (numBytesRead > 0)
         {
-            status = uartTx_echo(handle, &cRxedChar, 1, NULL);
             if(cRxedChar == '\r' || cRxedChar == '\n')
             {
                 status = uartTx_echo(handle, breakLine, 2, NULL);
@@ -207,7 +206,7 @@ void uartCliIOFxn(UART2_Handle handle)
                     status = UART2_write( handle, pcOutputString, strlen( pcOutputString ), NULL);
                 } while( xMoreDataToFollow != pdFALSE );
 
-                status = UART2_write(handle, breakLine, 2, NULL);
+                //status = UART2_write(handle, breakLine, 2, NULL);
                 cInputIndex = 0;
                 memset( pcInputString, 0x00, MAX_INPUT_LENGTH );
             }
@@ -218,9 +217,9 @@ void uartCliIOFxn(UART2_Handle handle)
                     if( cInputIndex > 0 )
                     {
                         cInputIndex--;
-                        pcInputString[ cInputIndex ] = ' ';
+                        pcInputString[ cInputIndex ] = '\0';
+                        status = uartTx_echo(handle, backspace, 3, NULL);
                     }
-                    status = uartTx_echo(handle, backspace, 2, NULL);
                 }
                 else
                 {
@@ -229,6 +228,7 @@ void uartCliIOFxn(UART2_Handle handle)
                         pcInputString[ cInputIndex ] = cRxedChar;
                         cInputIndex++;
                     }
+                    status = uartTx_echo(handle, &cRxedChar, 1, NULL);
                 }
             }
 
