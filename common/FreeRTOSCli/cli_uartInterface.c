@@ -36,7 +36,7 @@ ICall_EntityID cli_uartICallEntityID;
 /* === Functions === */
 void cli_uartConsoleStart(void);
 void *cli_uartConsoleThread(void *arg0);
-void cli_uartRxCb(UART2_Handle handle, void *buffer, size_t count, void *userArg, int_fast16_t status);
+void cli_uartRxCB(UART2_Handle handle, void *buffer, size_t count, void *userArg, int_fast16_t status);
 uint8_t cli_uartProcessMsgCB(uint8_t event, uint8_t *pMessage);
 
 static int_fast16_t cli_uartTxEcho(UART2_Handle handle, const void* pValue, size_t len , size_t *bytesWritten);
@@ -44,7 +44,7 @@ static int_fast16_t cli_uartTxEcho(UART2_Handle handle, const void* pValue, size
 /*
  *  ======== callbackFxn ========
  */
-void cli_uartRxCb(UART2_Handle handle, void *buffer, size_t count, void *userArg, int_fast16_t status)
+void cli_uartRxCB(UART2_Handle handle, void *buffer, size_t count, void *userArg, int_fast16_t status)
 {
     if (status != UART2_STATUS_SUCCESS)
     { /* RX error occured in UART2_read() */ while (1) {} }
@@ -56,9 +56,8 @@ void cli_uartRxCb(UART2_Handle handle, void *buffer, size_t count, void *userArg
 void *cli_uartConsoleThread(void *arg0)
 {
     // IMPORTANT: Task should register to ICall app to access BLE function
-    ICall_Errno icall_staus;
-    icall_staus = ICall_registerAppCback(&cli_uartICallEntityID, cli_uartProcessMsgCB);
-
+    //ICall_Errno icall_staus;
+    //icall_staus = ICall_registerAppCback(&cli_uartICallEntityID, cli_uartProcessMsgCB);
 
     int32_t semStatus;
     uint32_t status = UART2_STATUS_SUCCESS;
@@ -71,7 +70,7 @@ void *cli_uartConsoleThread(void *arg0)
     /* Create a UART in CALLBACK read mode */
     UART2_Params_init(&cli_uartParams);
     cli_uartParams.readMode     = UART2_Mode_CALLBACK;
-    cli_uartParams.readCallback = cli_uartRxCb;
+    cli_uartParams.readCallback = cli_uartRxCB;
     cli_uartParams.baudRate     = 115200;
 
     cli_uartHandle = UART2_open(CONFIG_DISPLAY_UART, &cli_uartParams);

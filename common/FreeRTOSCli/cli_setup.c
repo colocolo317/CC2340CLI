@@ -14,19 +14,20 @@
 #include <ti/bleapp/ble_app_util/inc/bleapputil_api.h>
 #include <ti/bleapp/ble_app_util/inc/bleapputil_internal.h>
 #include <ti/bleapp/services/data_stream/data_stream_server.h>
-//#include <common/Drivers/UART/uart_api.h>
 #include <common/Services/dev_info/dev_info_service.h>
 #include <gapgattserver.h>
 #include <driverlib/pmctl.h>
 #include <common/FreeRTOSCli/cli_api.h>
+#include <common/Drivers/UART/uart_api.h>
 
 //#define MAX_COMMAND_COUNT 4
 
 extern BLEAppUtil_TheardEntity_t BLEAppUtil_theardEntity;
 
-//extern void appMain(void);
+/* External function */
 extern int BLEAppUtil_createBLEAppUtilTask(void);
-
+extern void trans_uartStart(void);
+/* Local function */
 static inline void cli_writeError(char *pcWriteBuffer){ strcpy(pcWriteBuffer, "\r\nERROR\r\n"); }
 
 static inline void cli_writeOK(char *pcWriteBuffer){ strcpy(pcWriteBuffer, "\r\nOK\r\n"); }
@@ -279,6 +280,9 @@ static BaseType_t prvAT_BLETRANMODEfxn( char *pcWriteBuffer,
                                         size_t xWriteBufferLen,
                                         const char *pcCommandString )
 {
+    UART2_Handle cli_uartHandle = cli_getUartHandle();
+    UART2_close(cli_uartHandle);
+    trans_uartStart();
     return pdFALSE;
 }
 static BaseType_t prvSTOPTRANMODEfxn( char *pcWriteBuffer,
