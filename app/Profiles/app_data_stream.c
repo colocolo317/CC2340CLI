@@ -139,7 +139,7 @@ static void DS_incomingDataCB( uint16 connHandle, char *pValue, uint16 len )
                       "Data: " MENU_MODULE_COLOR_YELLOW "%s" MENU_MODULE_COLOR_RESET,
                       printData);
 
-    int_fast16_t uart_status =  uartTx_send((uint8*)pValue, len); // TODO: Finish UART streaming
+    int_fast16_t uart_status =  trans_uartTxSend((uint8*)pValue, len); // TODO: Finish UART streaming
 
     // Change upper case to lower case and lower case to upper case
     for ( i = 0; i < len; i++ )

@@ -4,15 +4,18 @@
  *  Created on: 2023/09/25
  *      Author: ch.wang
  */
+/*
+ * For transparent mode. Streaming from UART
+ * to BLE characteristic.
+ */
+
 #include <FreeRTOS.h>
-#include "FreeRTOS_CLI.h"
 #include <icall.h>
 /* POSIX Header files */
 #include <pthread.h>
 #include <string.h>
 #include <semaphore.h>
 /* Driver Header files */
-#include <ti/drivers/UART2.h>
 #include <ti/bleapp/profiles/data_stream/data_stream_profile.h>
 #include <ti/bleapp/services/data_stream/data_stream_server.h>
 /* Driver configuration */
@@ -37,19 +40,16 @@ uint8_t rxBuffer[MAX_INPUT_LENGTH];
 /* === Local Variables ===*/
 static sem_t sem;
 static volatile size_t numBytesRead;
-UART2_Handle handle;
-ICall_EntityID UARTICallEntityID;
-static uint8 uart_echo_onoff = UART_ECHO;
+static UART2_Handle trans_uartHandle;
+static UART2_Params trans_uartParams;
+ICall_EntityID trans_UartICallEntityID;
 
 /* === Functions === */
 void uartConsoleStart(void);
 void *uartConsoleThread(void *arg0);
 void uartRx_cb(UART2_Handle handle, void *buffer, size_t count, void *userArg, int_fast16_t status);
-void uartCliIOFxn(UART2_Handle handle);
 void uarttoBleStreamFxn(UART2_Handle handle);
 uint8_t uart_processMsgCB(uint8_t event, uint8_t *pMessage);
-
-static int_fast16_t uartTx_echo(UART2_Handle handle, const void* pValue, size_t len , size_t *bytesWritten);
 
 
 /*
@@ -69,10 +69,9 @@ void *uartConsoleThread(void *arg0)
 {
     // IMPORTANT: Task should register to ICall app to access BLE function
     ICall_Errno icall_staus;
-    icall_staus = ICall_registerAppCback(&UARTICallEntityID, uart_processMsgCB); // handle maybe cannot be NULL
+    icall_staus = ICall_registerAppCback(&trans_UartICallEntityID, uart_processMsgCB);
 
-    //UART2_Handle handle;
-    UART2_Params uartParams;
+
     int32_t semStatus;
     uint32_t status = UART2_STATUS_SUCCESS;
 
@@ -82,23 +81,23 @@ void *uartConsoleThread(void *arg0)
     { while (1) {} /* Error creating semaphore */ }
 
     /* Create a UART in CALLBACK read mode */
-    UART2_Params_init(&uartParams);
-    uartParams.readMode     = UART2_Mode_CALLBACK;
-    uartParams.readCallback = uartRx_cb;
-    uartParams.baudRate     = 115200;
+    UART2_Params_init(&trans_uartParams);
+    trans_uartParams.readMode     = UART2_Mode_CALLBACK;
+    trans_uartParams.readCallback = uartRx_cb;
+    trans_uartParams.baudRate     = 115200;
 
-    handle = UART2_open(CONFIG_DISPLAY_UART, &uartParams);
-    if (handle == NULL)
+    trans_uartHandle = UART2_open(CONFIG_DISPLAY_UART, &trans_uartParams);
+    if (trans_uartHandle == NULL)
     { while (1) {} /* UART2_open() failed */ }
 
     switch(uUartIOMode)
     {
         case BLE_STREAM_MODE:
-            uarttoBleStreamFxn(handle);
+            uarttoBleStreamFxn(trans_uartHandle);
             break;
         case CLI_MODE:
         default:
-            uartCliIOFxn(handle);
+            uartCliIOFxn(trans_uartHandle);
             break;
     }
 }
@@ -138,17 +137,17 @@ void uartConsoleStart(void)
     { while (1) {} /* pthread_create() failed */ }
 }
 
-void uarttoBleStreamFxn(UART2_Handle handle)
+void uarttoBleStreamFxn(UART2_Handle trans_uartHandle)
 {
     uint32_t status = UART2_STATUS_SUCCESS;
     uint8 bleStatus = SUCCESS;
     static const char * const pcBleMessage = "\r\nBLE streaming start. Your input in UART is output to BLE.\r\n";
-    status = UART2_write(handle, pcBleMessage, strlen( pcBleMessage ), NULL);
+    status = UART2_write(trans_uartHandle, pcBleMessage, strlen( pcBleMessage ), NULL);
 
     while (1)
     {
         numBytesRead = 0;
-        status = UART2_read(handle, rxBuffer, MAX_INPUT_LENGTH, NULL);
+        status = UART2_read(trans_uartHandle, rxBuffer, MAX_INPUT_LENGTH, NULL);
         if (status != UART2_STATUS_SUCCESS)
         { /* UART2_read() failed */ while (1) {} }
 
@@ -165,106 +164,13 @@ void uarttoBleStreamFxn(UART2_Handle handle)
     }
 }
 
-void uartCliIOFxn(UART2_Handle handle)
+
+int_fast16_t trans_uartTxSend(uint8 *pValue, uint16 len)
 {
-    const char breakLine[] = "\r\n";
-    const char backspace[] = "\b \b";
-    char cRxedChar;
-    static char pcOutputString[ MAX_OUTPUT_LENGTH ], pcInputString[ MAX_INPUT_LENGTH ];
-    int8_t cInputIndex = 0;
-    BaseType_t xMoreDataToFollow;
-    uint32_t status = UART2_STATUS_SUCCESS;
-    static const char * const pcCliMessage = "\r\nAmpak WL71340 AT-Command interface.\r\nType \"HELP\" to view a list of registered commands.\r\n";
-    /* Pass NULL for bytesWritten since it's not used in this example */
-    status = UART2_write(handle, pcCliMessage, strlen( pcCliMessage ), NULL);
-
-    /* Loop forever echoing */
-    while (1)
-    {
-        numBytesRead = 0;
-        /* Pass NULL for bytesRead since it's not used in this example */
-        status = UART2_read(handle, &cRxedChar, 1, NULL);
-
-        if (status != UART2_STATUS_SUCCESS)
-        { /* UART2_read() failed */ while (1) {} }
-
-        sem_wait(&sem); /* Do not write until read callback executes */
-
-        if (numBytesRead > 0)
-        {
-            if(cRxedChar == '\r' || cRxedChar == '\n')
-            {
-                status = uartTx_echo(handle, breakLine, 2, NULL);
-                do{
-                    // Send the command string to the command interpreter.
-                    xMoreDataToFollow = FreeRTOS_CLIProcessCommand(
-                                      pcInputString,    //The command string.
-                                      pcOutputString,   //The output buffer.
-                                      MAX_OUTPUT_LENGTH //The size of the output buffer.
-                                  );
-                    // Write the output generated by the command interpreter to the console.
-                    status = UART2_write( handle, pcOutputString, strlen( pcOutputString ), NULL);
-                } while( xMoreDataToFollow != pdFALSE );
-
-                //status = UART2_write(handle, breakLine, 2, NULL);
-                cInputIndex = 0;
-                memset( pcInputString, 0x00, MAX_INPUT_LENGTH );
-            }
-            else
-            {
-                if(cRxedChar == '\b')
-                {
-                    if( cInputIndex > 0 )
-                    {
-                        cInputIndex--;
-                        pcInputString[ cInputIndex ] = '\0';
-                        status = uartTx_echo(handle, backspace, 3, NULL);
-                    }
-                }
-                else
-                {
-                    if( cInputIndex < MAX_INPUT_LENGTH )
-                    {
-                        pcInputString[ cInputIndex ] = cRxedChar;
-                        cInputIndex++;
-                    }
-                    status = uartTx_echo(handle, &cRxedChar, 1, NULL);
-                }
-            }
-
-            if (status != UART2_STATUS_SUCCESS)
-            { while (1) {} /* UART2_write() failed */ }
-        }
-    }
+    return UART2_write(trans_uartHandle, pValue, len, NULL);
 }
 
-int_fast16_t uartTx_send(uint8 *pValue, uint16 len)
+UART2_Handle trans_getUartHandle(void)
 {
-    return UART2_write(handle, pValue, len, NULL);
-}
-
-static int_fast16_t uartTx_echo(UART2_Handle handle, const void* pValue, size_t len , size_t *bytesWritten)
-{
-    if(uart_echo_onoff)
-    {
-        return UART2_write(handle, pValue, len, NULL);
-    }
-    return 0;
-}
-
-bStatus_t uartSetEchoOnOff(uint8 onOff)
-{
-    bStatus_t status = SUCCESS;
-
-    switch(onOff)
-    {
-    case UART_NO_ECHO:
-    case UART_ECHO:
-        uart_echo_onoff = onOff;
-        break;
-    default:
-        status = FAILURE;
-    }
-
-    return status;
+    return trans_uartHandle;
 }

@@ -72,7 +72,7 @@ icall_userCfg_t user0Cfg = BLE_USER_CFG;
 extern void appMain(void);
 extern void cli_init(void);
 extern void AssertHandler(uint8 assertCause, uint8 assertSubcause);
-extern void uartConsoleStart(void);
+extern void cli_uartConsoleStart(void);
 
 /*******************************************************************************
  * @fn          Main
@@ -107,7 +107,7 @@ int main()
   /* Initialize all applications tasks (ble app)*/
   appMain();
 
-  uartConsoleStart();
+  cli_uartConsoleStart();
 
   /* Start the FreeRTOS scheduler */
   vTaskStartScheduler();

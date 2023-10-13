@@ -5,7 +5,7 @@
  *      Author: ch.wang
  */
 
-#include <common/FreeRTOSCli/cli_api.h>
+
 #include <FreeRTOS.h>
 #include "FreeRTOS_CLI.h"
 #include <string.h>
@@ -14,10 +14,11 @@
 #include <ti/bleapp/ble_app_util/inc/bleapputil_api.h>
 #include <ti/bleapp/ble_app_util/inc/bleapputil_internal.h>
 #include <ti/bleapp/services/data_stream/data_stream_server.h>
-#include <common/Drivers/UART/uart_api.h>
+//#include <common/Drivers/UART/uart_api.h>
 #include <common/Services/dev_info/dev_info_service.h>
 #include <gapgattserver.h>
 #include <driverlib/pmctl.h>
+#include <common/FreeRTOSCli/cli_api.h>
 
 //#define MAX_COMMAND_COUNT 4
 
@@ -175,10 +176,10 @@ static BaseType_t prvAT_ECHOfxn( char *pcWriteBuffer,
     switch(*pcParameter1)
     {
     case '0':
-        ret = uartSetEchoOnOff(0);
+        ret = cli_uartSetEchoOnOff(0);
         break;
     case '1':
-        ret = uartSetEchoOnOff(1);
+        ret = cli_uartSetEchoOnOff(1);
         break;
     default:
         cli_writeError(pcWriteBuffer);
@@ -284,6 +285,7 @@ static BaseType_t prvSTOPTRANMODEfxn( char *pcWriteBuffer,
                                         size_t xWriteBufferLen,
                                         const char *pcCommandString )
 {
+
     return pdFALSE;
 }
 static BaseType_t prvAT_BLEGATTSNTFYfxn( char *pcWriteBuffer,
