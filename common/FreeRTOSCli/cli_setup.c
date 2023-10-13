@@ -17,6 +17,7 @@
 #include <common/Drivers/UART/uart_api.h>
 #include <common/Services/dev_info/dev_info_service.h>
 #include <gapgattserver.h>
+#include <driverlib/pmctl.h>
 
 //#define MAX_COMMAND_COUNT 4
 
@@ -313,6 +314,9 @@ static BaseType_t prvAT_RSTfxn( char *pcWriteBuffer,
                                 size_t xWriteBufferLen,
                                 const char *pcCommandString )
 {
+    // buffer string may not meet display time.
+    cli_writeOK(pcWriteBuffer);
+    PMCTLResetSystem();
     return pdFALSE;
 }
 static BaseType_t prvAT_BLESTOPfxn( char *pcWriteBuffer,
