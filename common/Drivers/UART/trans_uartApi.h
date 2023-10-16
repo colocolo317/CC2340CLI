@@ -5,8 +5,8 @@
  *      Author: ch.wang
  */
 
-#ifndef COMMON_DRIVERS_UART_UART_API_H_
-#define COMMON_DRIVERS_UART_UART_API_H_
+#ifndef COMMON_DRIVERS_UART_TRANS_UARTAPI_H_
+#define COMMON_DRIVERS_UART_TRANS_UARTAPI_H_
 
 #include <ti/drivers/UART2.h>
 
@@ -14,7 +14,7 @@
 #define UART_ECHO           (1)
 
 
-int_fast16_t trans_uartTxSend(uint8 *pValue, uint16 len);
+int_fast16_t trans_uartTxSend(uint8_t *pValue, uint16_t len);
 UART2_Handle trans_getUartHandle(void);
 
-#endif /* COMMON_DRIVERS_UART_UART_API_H_ */
+#endif /* COMMON_DRIVERS_UART_TRANS_UARTAPI_H_ */

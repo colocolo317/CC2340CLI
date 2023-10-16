@@ -5,7 +5,6 @@
  *      Author: ch.wang
  */
 
-
 #include <FreeRTOS.h>
 #include "FreeRTOS_CLI.h"
 #include <string.h>
@@ -18,7 +17,7 @@
 #include <gapgattserver.h>
 #include <driverlib/pmctl.h>
 #include <common/FreeRTOSCli/cli_api.h>
-#include <common/Drivers/UART/uart_api.h>
+#include <common/Drivers/UART/trans_uartApi.h>
 
 //#define MAX_COMMAND_COUNT 4
 

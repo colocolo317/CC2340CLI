@@ -24,7 +24,7 @@ $Release Date: PACKAGE RELEASE DATE $
 #include <ti/bleapp/ble_app_util/inc/bleapputil_api.h>
 #include <ti/bleapp/menu_module/menu_module.h>
 #include <app_main.h>
-#include <uart_api.h>
+#include <trans_uartApi.h>
 
 //*****************************************************************************
 //! Defines

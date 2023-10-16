@@ -56,6 +56,8 @@ void cli_uartRxCB(UART2_Handle handle, void *buffer, size_t count, void *userArg
 void *cli_uartConsoleThread(void *arg0)
 {
     // IMPORTANT: Task should register to ICall app to access BLE function
+    // NOTE: ICall_registerAppCback() invoke in trans_uart task cause fail.
+    //       CLI don't use ICall for BLE access so cancel the registry here.
     //ICall_Errno icall_staus;
     //icall_staus = ICall_registerAppCback(&cli_uartICallEntityID, cli_uartProcessMsgCB);
 

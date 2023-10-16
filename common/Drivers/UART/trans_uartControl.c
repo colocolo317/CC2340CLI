@@ -18,10 +18,10 @@
 /* Driver Header files */
 #include <ti/bleapp/profiles/data_stream/data_stream_profile.h>
 #include <ti/bleapp/services/data_stream/data_stream_server.h>
+#include <trans_uartApi.h>
 /* Driver configuration */
 #include "ti_drivers_config.h"
 #include "icall_ble_api.h"
-#include "uart_api.h"
 
 
 /* Stack size in bytes */
@@ -143,7 +143,7 @@ void trans_uartStart(void)
     { while (1) {} /* pthread_create() failed */ }
 }
 
-int_fast16_t trans_uartTxSend(uint8 *pValue, uint16 len)
+int_fast16_t trans_uartTxSend(uint8_t *pValue, uint16_t len)
 {
     return UART2_write(trans_uartHandle, pValue, len, NULL);
 }
