@@ -23,8 +23,8 @@
 /* This Header file contains all BLE API and icall structure definition */
 #include "icall_ble_api.h"
 
-#include <ti/bleapp/services/data_stream/data_stream_server.h>
-#include <ti/bleapp/ble_app_util/inc/bleapputil_api.h>
+#include <common/Services/data_stream/data_stream_server.h>
+#include <common/BLEAppUtil/inc/bleapputil_api.h>
 #include "ble_stack_api.h"
 
 /*********************************************************************
@@ -41,14 +41,14 @@
  * LOCAL VARIABLES
  */
 
-// Data Stream Server Service UUID: 0xC0C0
-GATT_UUID( dss_serv_UUID, DSS_SERV_UUID );
+// Data Stream Server Service UUID: 0xFFF0
+GATT_BT_UUID( dss_serv_UUID, DSS_SERV_UUID );
 
-// Data In Characteristic UUID: 0xC0C1
-GATT_UUID( dss_dataIn_UUID, DSS_DATAIN_UUID );
+// Data In Characteristic UUID: 0xFFF1
+GATT_BT_UUID( dss_dataIn_UUID, DSS_DATAIN_UUID );
 
-// Data Out Characteristic UUID: 0xC0C2
-GATT_UUID( dss_dataOut_UUID, DSS_DATAOUT_UUID );
+// Data Out Characteristic UUID: 0xFFF2
+GATT_BT_UUID( dss_dataOut_UUID, DSS_DATAOUT_UUID );
 
 static DSS_cb_t *dss_profileCBs = NULL;
 
@@ -57,7 +57,7 @@ static DSS_cb_t *dss_profileCBs = NULL;
  */
 
 // Data Stream Server Service declaration
-static CONST gattAttrType_t dss_service = { ATT_UUID_SIZE, dss_serv_UUID };
+static CONST gattAttrType_t dss_service = { ATT_BT_UUID_SIZE, dss_serv_UUID };
 
 // Characteristic "DataIn" Properties
 static uint8 dss_dataIn_props = GATT_PROP_WRITE;
@@ -96,14 +96,14 @@ static gattAttribute_t dss_attrTbl[] =
    // DataIn Characteristic Properties
    GATT_BT_ATT( characterUUID,                      GATT_PERMIT_READ,                        &dss_dataIn_props ),
    // DataIn Characteristic Value
-   GATT_ATT( dss_dataIn_UUID,                       GATT_PERMIT_WRITE,                       &dss_dataIn_val ),
+   GATT_BT_ATT( dss_dataIn_UUID,                       GATT_PERMIT_WRITE,                       &dss_dataIn_val ),
    // DataIn Characteristic User Description
    GATT_BT_ATT( charUserDescUUID,                   GATT_PERMIT_READ,                        dss_dataIn_userDesp ),
 
    // DataOut Characteristic Properties
    GATT_BT_ATT( characterUUID,                      GATT_PERMIT_READ,                        &dss_dataOut_props ),
    // DataOut Characteristic Value
-   GATT_ATT( dss_dataOut_UUID,                      0,                                       &dss_dataOut_val ),
+   GATT_BT_ATT( dss_dataOut_UUID,                      0,                                       &dss_dataOut_val ),
    // DataOut Characteristic configuration
    GATT_BT_ATT( clientCharCfgUUID,                  GATT_PERMIT_READ | GATT_PERMIT_WRITE,    (uint8 *) &dss_dataOut_config ),
    // DataOut Characteristic User Description

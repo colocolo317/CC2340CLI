@@ -30,15 +30,16 @@ extern "C"
  * CONSTANTS
  */
 // Service UUID
-#define DSS_SERV_UUID 0xC0C0
+// FIXED: data_stream_server.h didn't ref this one
+#define DSS_SERV_UUID 0xFFF0
 
 // Characteristic defines
 #define DSS_DATAIN_ID   0
-#define DSS_DATAIN_UUID 0xC0C1
+#define DSS_DATAIN_UUID 0xFFF1
 
 // Characteristic defines
 #define DSS_DATAOUT_ID   1
-#define DSS_DATAOUT_UUID 0xC0C2
+#define DSS_DATAOUT_UUID 0xFFF2
 
 // Maximum allowed length for incoming data
 #define DSS_MAX_DATA_IN_LEN 128
