@@ -103,8 +103,8 @@ static uint8 devInfoSerialNumber[DEVINFO_STR_ATTR_LEN+1] = "Serial Number";
 
 // Firmware Revision String characteristic
 static uint8 devInfoFirmwareRevProps = GATT_PROP_READ;
-static uint8 devInfoFirmwareRev[DEVINFO_STR_ATTR_LEN+1] = "0.00.01.234105";
-// TODO: Last modify started: 20231013
+static uint8 devInfoFirmwareRev[DEVINFO_STR_ATTR_LEN+1] = "0.00.01.234201";
+// TODO: Last modify started: 20231016
 
 // Hardware Revision String characteristic
 static uint8 devInfoHardwareRevProps = GATT_PROP_READ;

@@ -68,6 +68,7 @@ static DSP_cb_t ds_profileCB =
  */
 static void DS_onCccUpdateCB( uint16 connHandle, uint16 pValue )
 {
+    // MenuModule closed, no function in here
   if ( pValue == DS_CCC_UPDATE_NOTIFICATION_ENABLED)
   {
     MenuModule_printf(APP_MENU_PROFILE_STATUS_LINE, 0,
@@ -99,7 +100,7 @@ static void DS_incomingDataCB( uint16 connHandle, char *pValue, uint16 len )
 {
   bStatus_t status = SUCCESS;
   char dataOut[] = "Data size is too long";
-  char printData[len+1];
+  //char printData[len+1];
   uint16 i = 0;
 
   // Clear lines
@@ -125,54 +126,10 @@ static void DS_incomingDataCB( uint16 connHandle, char *pValue, uint16 len )
   // New data received from peer device
   else
   {
-    // Copy the incoming data to buffer before printing it
-    memcpy (printData, pValue, len );
-    printData[len] ='\0';
-
-    // Print the incoming data
-    MenuModule_printf(APP_MENU_PROFILE_STATUS_LINE1, 0,
-                      "DataStream status: Incoming data - "
-                      "connectionHandle: " MENU_MODULE_COLOR_YELLOW "%d " MENU_MODULE_COLOR_RESET
-                      "length: " MENU_MODULE_COLOR_YELLOW "%d " MENU_MODULE_COLOR_RESET,
-                      connHandle, len);
-    MenuModule_printf(APP_MENU_PROFILE_STATUS_LINE2, 0,
-                      "Data: " MENU_MODULE_COLOR_YELLOW "%s" MENU_MODULE_COLOR_RESET,
-                      printData);
-
     int_fast16_t uart_status =  trans_uartTxSend((uint8*)pValue, len); // TODO: Finish UART streaming
 
-    // Change upper case to lower case and lower case to upper case
-    for ( i = 0; i < len; i++ )
-    {
-      if ( pValue[i] >= 'a' && pValue[i] <= 'z' )
-      {
-        pValue[i] = pValue[i] - 32;
-      }
-      else if ( pValue[i] >= 'A' && pValue[i] <= 'Z' )
-      {
-        pValue[i] = pValue[i] + 32;
-      }
-    }
-
-    // Echo the incoming data over GATT notification
-    status = DSP_sendData( (uint8 *)pValue, len );
-    if ( status == SUCCESS )
-    {
-      // Copy the changed data to buffer before printing it
-      memcpy (printData, pValue, len );
-
-      // Print the echo data
-      MenuModule_printf(APP_MENU_PROFILE_STATUS_LINE3, 0,
-                        "Echo: " MENU_MODULE_COLOR_YELLOW "%s" MENU_MODULE_COLOR_RESET,
-                        printData);
-    }
-    else
-    {
-      // Print error message
-      MenuModule_printf(APP_MENU_PROFILE_STATUS_LINE3, 0,
-                        "Send data - Error: " MENU_MODULE_COLOR_YELLOW "%d " MENU_MODULE_COLOR_RESET,
-                        status);
-    }
+    // [Canceled] Change upper case to lower case and lower case to upper case
+    // [Canceled] Echo the incoming data over GATT notification
   }
 }
 

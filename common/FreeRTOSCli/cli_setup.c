@@ -279,16 +279,29 @@ static BaseType_t prvAT_BLETRANMODEfxn( char *pcWriteBuffer,
                                         size_t xWriteBufferLen,
                                         const char *pcCommandString )
 {
-    UART2_Handle cli_uartHandle = cli_getUartHandle();
-    UART2_close(cli_uartHandle);
-    trans_uartStart();
+    // Check BLE task is running
+    // TODO: use BLEAppUtil_checkBLEstat() function get BLE status
+    if (BLEAppUtil_theardEntity.threadId != NULL)
+    {
+        // TODO: modify call cli close UART function
+        // cli_uartClose();
+        // trans_uartOpen();
+        UART2_Handle cli_uartHandle = cli_getUartHandle();
+        UART2_close(cli_uartHandle);
+        trans_uartStart();
+
+        cli_writeOK(pcWriteBuffer);
+    }
+
+    cli_writeError(pcWriteBuffer);
     return pdFALSE;
 }
 static BaseType_t prvSTOPTRANMODEfxn( char *pcWriteBuffer,
                                         size_t xWriteBufferLen,
                                         const char *pcCommandString )
 {
-
+    // trans_uartClose();
+    // cli_uartOpen();
     return pdFALSE;
 }
 static BaseType_t prvAT_BLEGATTSNTFYfxn( char *pcWriteBuffer,
