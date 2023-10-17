@@ -18,8 +18,8 @@ $Release Date: PACKAGE RELEASE DATE $
 //! Includes
 //*****************************************************************************
 #include <string.h>
-#include <ti/bleapp/ble_app_util/inc/bleapputil_api.h>
-#include <ti/bleapp/services/dev_info/dev_info_service.h>
+#include <common/BLEAppUtil/inc/bleapputil_api.h>
+#include <common/Services/dev_info/dev_info_service.h>
 
 //*****************************************************************************
 //! Defines

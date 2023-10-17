@@ -22,7 +22,7 @@
 #include <icall.h>
 /* This Header file contains all BLE API and icall structure definition */
 #include "icall_ble_api.h"
-
+// DONE: replace local .h file from SDK
 #include <common/Services/data_stream/data_stream_server.h>
 #include <common/BLEAppUtil/inc/bleapputil_api.h>
 #include "ble_stack_api.h"

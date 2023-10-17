@@ -26,7 +26,7 @@ extern "C"
  * INCLUDES
  */
 
-#include <ti/bleapp/ble_app_util/inc/bleapputil_api.h>
+#include <common/BLEAppUtil/inc/bleapputil_api.h>
 
 /*********************************************************************
  * Profile Callback

@@ -24,7 +24,7 @@
 /* This Header file contains all BLE API and icall structure definition */
 #include "icall_ble_api.h"
 
-#include <ti/bleapp/services/dev_info/dev_info_service.h>
+#include <common/Services/dev_info/dev_info_service.h>
 /*********************************************************************
  * MACROS
  */
@@ -103,7 +103,7 @@ static uint8 devInfoSerialNumber[DEVINFO_STR_ATTR_LEN+1] = "Serial Number";
 
 // Firmware Revision String characteristic
 static uint8 devInfoFirmwareRevProps = GATT_PROP_READ;
-static uint8 devInfoFirmwareRev[DEVINFO_STR_ATTR_LEN+1] = "0.00.01.234202";
+static uint8 devInfoFirmwareRev[DEVINFO_STR_ATTR_LEN+1] = "0.00.01.234203";
 // TODO: Last modify started: 20231016
 
 // Hardware Revision String characteristic

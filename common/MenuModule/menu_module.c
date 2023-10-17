@@ -17,8 +17,8 @@ $Release Date: PACKAGE RELEASE DATE $
 /******************************************************************************
  Includes
  *****************************************************************************/
-#include <ti/bleapp/menu_module/menu_module.h>
-#include <ti/bleapp/ble_app_util/inc/bleapputil_api.h>
+#include <common/MenuModule/menu_module.h>
+#include <common/BLEAppUtil/inc/bleapputil_api.h>
 #include <ti/drivers/apps/Button.h>
 #include <ti/display/Display.h>
 #include <string.h>

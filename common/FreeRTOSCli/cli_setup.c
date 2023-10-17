@@ -10,9 +10,9 @@
 #include <string.h>
 #include <pthread.h>
 #include "ble_stack_api.h"
-#include <ti/bleapp/ble_app_util/inc/bleapputil_api.h>
+#include <common/BLEAppUtil/inc/bleapputil_api.h>
 #include <ti/bleapp/ble_app_util/inc/bleapputil_internal.h>
-#include <ti/bleapp/services/data_stream/data_stream_server.h>
+#include <common/Services/data_stream/data_stream_server.h>
 #include <common/Services/dev_info/dev_info_service.h>
 #include <gapgattserver.h>
 #include <driverlib/pmctl.h>

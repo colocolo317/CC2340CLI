@@ -23,8 +23,8 @@
 /* This Header file contains all BLE API and icall structure definition */
 #include "icall_ble_api.h"
 
-#include <ti/bleapp/profiles/data_stream/data_stream_profile.h>
-#include <ti/bleapp/services/data_stream/data_stream_server.h>
+#include <common/Profiles/data_stream/data_stream_profile.h>
+#include <common/Services/data_stream/data_stream_server.h>
 
 /*********************************************************************
  * MACROS

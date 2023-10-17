@@ -20,7 +20,7 @@ $Release Date: PACKAGE RELEASE DATE $
  */
 #include <string.h>
 #include <stdarg.h>
-#include <ti/bleapp/ble_app_util/inc/bleapputil_api.h>
+#include <common/BLEAppUtil/inc/bleapputil_api.h>
 #include <ti/bleapp/ble_app_util/inc/bleapputil_internal.h>
 
 /*********************************************************************

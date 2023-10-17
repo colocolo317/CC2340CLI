@@ -16,8 +16,8 @@
 #include <string.h>
 #include <semaphore.h>
 /* Driver Header files */
-#include <ti/bleapp/profiles/data_stream/data_stream_profile.h>
-#include <ti/bleapp/services/data_stream/data_stream_server.h>
+#include <common/Profiles/data_stream/data_stream_profile.h>
+#include <common/Services/data_stream/data_stream_server.h>
 #include <trans_uartApi.h>
 /* Driver configuration */
 #include "ti_drivers_config.h"

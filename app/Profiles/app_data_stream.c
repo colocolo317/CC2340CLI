@@ -20,9 +20,9 @@ $Release Date: PACKAGE RELEASE DATE $
 #include <string.h>
 #include <time.h>
 #include <ti/drivers/GPIO.h>
-#include <ti/bleapp/profiles/data_stream/data_stream_profile.h>
-#include <ti/bleapp/ble_app_util/inc/bleapputil_api.h>
-#include <ti/bleapp/menu_module/menu_module.h>
+#include <common/Profiles/data_stream/data_stream_profile.h>
+#include <common/BLEAppUtil/inc/bleapputil_api.h>
+#include <common/MenuModule/menu_module.h>
 #include <app_main.h>
 #include <trans_uartApi.h>
 

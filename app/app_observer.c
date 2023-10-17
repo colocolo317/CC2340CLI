@@ -38,8 +38,8 @@ $Release Date: PACKAGE RELEASE DATE $
 //*****************************************************************************
 #include <string.h>
 #include "ti_ble_config.h"
-#include <ti/bleapp/ble_app_util/inc/bleapputil_api.h>
-#include <ti/bleapp/menu_module/menu_module.h>
+#include <common/BLEAppUtil/inc/bleapputil_api.h>
+#include <common/MenuModule/menu_module.h>
 #include <app_main.h>
 
 //*****************************************************************************
