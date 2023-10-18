@@ -73,6 +73,7 @@ extern void appMain(void);
 extern void cli_init(void);
 extern void AssertHandler(uint8 assertCause, uint8 assertSubcause);
 extern void cli_uartConsoleStart(void);
+extern void trans_uartStart(void);
 
 /*******************************************************************************
  * @fn          Main
@@ -108,6 +109,7 @@ int main()
   appMain();
 
   cli_uartConsoleStart();
+  trans_uartStart();
 
   /* Start the FreeRTOS scheduler */
   vTaskStartScheduler();

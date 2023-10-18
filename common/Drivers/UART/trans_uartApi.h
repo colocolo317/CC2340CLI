@@ -10,11 +10,9 @@
 
 #include <ti/drivers/UART2.h>
 
-#define UART_NO_ECHO        (0)
-#define UART_ECHO           (1)
-
-
 int_fast16_t trans_uartTxSend(uint8_t *pValue, uint16_t len);
 UART2_Handle trans_getUartHandle(void);
+bStatus_t trans_uartEnable(void);
+bStatus_t trans_uartDisable(void);
 
 #endif /* COMMON_DRIVERS_UART_TRANS_UARTAPI_H_ */

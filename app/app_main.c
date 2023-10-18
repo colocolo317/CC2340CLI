@@ -34,7 +34,7 @@ $Release Date: PACKAGE RELEASE DATE $
 // Parameters that should be given as input to the BLEAppUtil_init function
 BLEAppUtil_GeneralParams_t appMainParams =
 {
-    .taskPriority = 1,
+    .taskPriority = 2,
     .taskStackSize = 1024,
     .profileRole = (BLEAppUtil_Profile_Roles_e)(HOST_CONFIG),
     .addressMode = DEFAULT_ADDRESS_MODE,

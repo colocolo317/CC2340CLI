@@ -49,6 +49,7 @@ ble.dupFilter                        = "SCAN_FLT_DUP_DISABLE";
 ble.maxNumPrepareWrites              = 10;
 ble.deviceRole                       = "PERIPHERAL_CFG+OBSERVER_CFG";
 ble.deviceName                       = "Ampak WL71340";
+ble.maxNumIcallEnabledTasks          = 4;
 ble.connUpdateParamsPeripheral.$name = "ti_ble5stack_general_ble_conn_update_params0";
 ble.advSet1.$name                    = "ti_ble5stack_broadcaster_advertisement_set0";
 ble.advSet1.advParam1.$name          = "ti_ble5stack_broadcaster_advertisement_params0";

@@ -36,11 +36,12 @@ uint8_t rxBuffer[MAX_INPUT_LENGTH];
 /* === Local Variables ===*/
 static sem_t sem;
 static volatile size_t numBytesRead;
-static UART2_Handle trans_uartHandle;
+static UART2_Handle trans_uartHandle = NULL;
 static UART2_Params trans_uartParams;
 ICall_EntityID trans_UartICallEntityID;
 
 /* === Functions === */
+static bStatus_t trans_bleTransferUart(void);
 void trans_uartStart(void);
 void *trans_uartThread(void *arg0);
 void trans_uartRxCB(UART2_Handle handle, void *buffer, size_t count, void *userArg, int_fast16_t status);
@@ -59,21 +60,9 @@ void trans_uartRxCB(UART2_Handle handle, void *buffer, size_t count, void *userA
     sem_post(&sem);
 }
 
-
-void *trans_uartThread(void *arg0)
+bStatus_t trans_uartEnable(void)
 {
-    // IMPORTANT: Task should register to ICall app to access BLE function
-    ICall_Errno icall_staus;
-    icall_staus = ICall_registerAppCback(&trans_UartICallEntityID, trans_uartProcessMsgCB);
-
-    int32_t semStatus;
-    uint32_t status = UART2_STATUS_SUCCESS;
-
-    semStatus = sem_init(&sem, 0, 0); /* Create semaphore */
-
-    if (semStatus != 0)
-    { while (1) {} /* Error creating semaphore */ }
-
+    bStatus_t status = SUCCESS;
     /* Create a UART in CALLBACK read mode */
     UART2_Params_init(&trans_uartParams);
     trans_uartParams.readMode     = UART2_Mode_CALLBACK;
@@ -84,26 +73,68 @@ void *trans_uartThread(void *arg0)
     if (trans_uartHandle == NULL)
     { while (1) {} /* UART2_open() failed */ }
 
-    uint8 bleStatus = SUCCESS;
-    static const char * const pcBleMessage = "\r\nBLE streaming start. Your input in UART is output to BLE.\r\n";
+    static const char * const pcBleMessage = "\r\nBLE streaming start. Your input into UART is output to BLE.\r\n";
     status = UART2_write(trans_uartHandle, pcBleMessage, strlen( pcBleMessage ), NULL);
+    sem_post(&sem);
+
+    return status;
+}
+
+bStatus_t trans_uartDisable(void)
+{
+    bStatus_t status = SUCCESS;
+    UART2_close(trans_uartHandle);
+    // TODO: if trans_uartHandle not be set to NULL should manually assign
+    return status;
+}
+
+static bStatus_t trans_bleTransferUart(void)
+{
+    bStatus_t status = SUCCESS;
+    uint8 bleStatus = SUCCESS;
+
+    numBytesRead = 0;
+    status = UART2_read(trans_uartHandle, rxBuffer, MAX_INPUT_LENGTH, NULL);
+    if (status != UART2_STATUS_SUCCESS)
+    { /* UART2_read() failed */ while (1) {} }
+
+    sem_wait(&sem); /* Do not write until read callback executes */
+
+    if (numBytesRead > 0)
+    {
+        // send to BLE characteristic
+        bleStatus = DSS_setParameter( DSS_DATAOUT_ID, rxBuffer, numBytesRead );
+
+        if(bleStatus != SUCCESS)
+        { /* DSS_setParameter() failed */ while (1) {} }
+    }
+    return status;
+}
+
+void *trans_uartThread(void *arg0)
+{
+    // IMPORTANT: Task should register to ICall app to access BLE function
+    ICall_Errno icall_staus;
+    icall_staus = ICall_registerAppCback(&trans_UartICallEntityID, trans_uartProcessMsgCB);
+    // FIXME: notify not able to use
+
+    int32_t semStatus;
+    uint32_t status = UART2_STATUS_SUCCESS;
+
+    semStatus = sem_init(&sem, 0, 0); /* Create semaphore */
+
+    if (semStatus != 0)
+    { while (1) {} /* Error creating semaphore */ }
 
     while (1)
     {
-        numBytesRead = 0;
-        status = UART2_read(trans_uartHandle, rxBuffer, MAX_INPUT_LENGTH, NULL);
-        if (status != UART2_STATUS_SUCCESS)
-        { /* UART2_read() failed */ while (1) {} }
-
-        sem_wait(&sem); /* Do not write until read callback executes */
-
-        if (numBytesRead > 0)
+        if(trans_uartHandle != NULL)
         {
-            // send to BLE characteristic
-            bleStatus = DSS_setParameter( DSS_DATAOUT_ID, rxBuffer, numBytesRead );
-
-            if(bleStatus != SUCCESS)
-            { /* DSS_setParameter() failed */ while (1) {} }
+            status = trans_bleTransferUart();
+        }
+        else
+        {
+            sem_wait(&sem);
         }
     }
 }

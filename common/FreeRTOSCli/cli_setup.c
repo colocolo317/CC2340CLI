@@ -16,8 +16,10 @@
 #include <common/Services/dev_info/dev_info_service.h>
 #include <gapgattserver.h>
 #include <driverlib/pmctl.h>
+#include <app_main.h>
 #include <common/FreeRTOSCli/cli_api.h>
 #include <common/Drivers/UART/trans_uartApi.h>
+#include "icall_ble_api.h"
 
 //#define MAX_COMMAND_COUNT 4
 
@@ -285,12 +287,14 @@ static BaseType_t prvAT_BLETRANMODEfxn( char *pcWriteBuffer,
     {
         // TODO: modify call cli close UART function
         // cli_uartClose();
-        // trans_uartOpen();
+
         UART2_Handle cli_uartHandle = cli_getUartHandle();
         UART2_close(cli_uartHandle);
-        trans_uartStart();
+        //trans_uartStart();
+        trans_uartEnable();
 
         cli_writeOK(pcWriteBuffer);
+        return pdFALSE;
     }
 
     cli_writeError(pcWriteBuffer);
@@ -320,12 +324,31 @@ static BaseType_t prvAT_BLEDISCONNfxn( char *pcWriteBuffer,
                                         size_t xWriteBufferLen,
                                         const char *pcCommandString )
 {
+    App_connInfo* connList = Connection_getConnList();
+
+    bStatus_t status = SUCCESS;
+    int i;
+    for(i = (MAX_NUM_BLE_CONNS-1); i >= 0; i--)
+    {
+        if(connList[i].connHandle != LINKDB_CONNHANDLE_INVALID){
+            status |= BLEAppUtil_disconnect(connList[i].connHandle);
+        }
+    }
+
+    if(status == SUCCESS){
+        cli_writeOK(pcWriteBuffer);
+    }else
+    {
+        cli_writeError(pcWriteBuffer);
+    }
+
     return pdFALSE;
 }
 static BaseType_t prvAT_BLESTATfxn( char *pcWriteBuffer,
                                     size_t xWriteBufferLen,
                                     const char *pcCommandString )
 {
+
     return pdFALSE;
 }
 static BaseType_t prvAT_RSTfxn( char *pcWriteBuffer,
