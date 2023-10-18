@@ -103,8 +103,8 @@ static uint8 devInfoSerialNumber[DEVINFO_STR_ATTR_LEN+1] = "Serial Number";
 
 // Firmware Revision String characteristic
 static uint8 devInfoFirmwareRevProps = GATT_PROP_READ;
-static uint8 devInfoFirmwareRev[DEVINFO_STR_ATTR_LEN+1] = "0.00.01.234204";
-// TODO: Last modify started: 20231017
+static uint8 devInfoFirmwareRev[DEVINFO_STR_ATTR_LEN+1] = "0.00.01.234205";
+// TODO: Last modify started: 20231018
 
 // Hardware Revision String characteristic
 static uint8 devInfoHardwareRevProps = GATT_PROP_READ;
@@ -116,7 +116,7 @@ static uint8 devInfoSoftwareRev[DEVINFO_STR_ATTR_LEN+1] = "Software Revision";
 
 // Manufacturer Name String characteristic
 static uint8 devInfoMfrNameProps = GATT_PROP_READ;
-static uint8 devInfoMfrName[DEVINFO_STR_ATTR_LEN+1] = "Manufacturer Name";
+static uint8 devInfoMfrName[DEVINFO_STR_ATTR_LEN+1] = "Ampak Tech Inc.";
 
 // IEEE 11073-20601 Regulatory Certification Data List characteristic
 static uint8 devInfo11073CertProps = GATT_PROP_READ;

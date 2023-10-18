@@ -20,5 +20,7 @@
 void cli_init(void);
 bStatus_t cli_uartSetEchoOnOff(uint8 onOff);
 UART2_Handle cli_getUartHandle(void);
+bStatus_t cli_uartEnable(void);
+bStatus_t cli_uartDisable(void);
 
 #endif /* COMMON_FREERTOSCLI_CLI_API_H_ */

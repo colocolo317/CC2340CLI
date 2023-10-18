@@ -285,12 +285,7 @@ static BaseType_t prvAT_BLETRANMODEfxn( char *pcWriteBuffer,
     // TODO: use BLEAppUtil_checkBLEstat() function get BLE status
     if (BLEAppUtil_theardEntity.threadId != NULL)
     {
-        // TODO: modify call cli close UART function
-        // cli_uartClose();
-
-        UART2_Handle cli_uartHandle = cli_getUartHandle();
-        UART2_close(cli_uartHandle);
-        //trans_uartStart();
+        cli_uartDisable();
         trans_uartEnable();
 
         cli_writeOK(pcWriteBuffer);

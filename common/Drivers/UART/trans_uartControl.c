@@ -19,6 +19,7 @@
 #include <common/Profiles/data_stream/data_stream_profile.h>
 #include <common/Services/data_stream/data_stream_server.h>
 #include <trans_uartApi.h>
+#include <common/FreeRTOSCli/cli_api.h>
 /* Driver configuration */
 #include "ti_drivers_config.h"
 #include "icall_ble_api.h"
@@ -30,6 +31,8 @@
 #define MAX_INPUT_LENGTH    50
 #define MAX_OUTPUT_LENGTH   100
 
+static const char * const pcBackCliMessage = "\r\nStop transparent mode. Go back command line.\r\n";
+static const char * const pcTransStopCmd = "\r\n+++\r\n";
 /* === Global Variables ===*/
 uint8_t rxBuffer[MAX_INPUT_LENGTH];
 
@@ -39,6 +42,7 @@ static volatile size_t numBytesRead;
 static UART2_Handle trans_uartHandle = NULL;
 static UART2_Params trans_uartParams;
 ICall_EntityID trans_UartICallEntityID;
+static uint8_t trans_modeStop = true;
 
 /* === Functions === */
 static bStatus_t trans_bleTransferUart(void);
@@ -46,6 +50,7 @@ void trans_uartStart(void);
 void *trans_uartThread(void *arg0);
 void trans_uartRxCB(UART2_Handle handle, void *buffer, size_t count, void *userArg, int_fast16_t status);
 uint8_t trans_uartProcessMsgCB(uint8_t event, uint8_t *pMessage);
+bStatus_t trans_switchBackToCli(void);
 
 
 /*
@@ -55,6 +60,11 @@ void trans_uartRxCB(UART2_Handle handle, void *buffer, size_t count, void *userA
 {
     if (status != UART2_STATUS_SUCCESS)
     { /* RX error occured in UART2_read() */ while (1) {} }
+
+    if(!memcmp((char*)buffer, pcTransStopCmd, sizeof(pcTransStopCmd)))
+    {
+        trans_modeStop = true;
+    }
 
     numBytesRead = count;
     sem_post(&sem);
@@ -73,9 +83,11 @@ bStatus_t trans_uartEnable(void)
     if (trans_uartHandle == NULL)
     { while (1) {} /* UART2_open() failed */ }
 
+    trans_modeStop = false;
+
     static const char * const pcBleMessage = "\r\nBLE streaming start. Your input into UART is output to BLE.\r\n";
     status = UART2_write(trans_uartHandle, pcBleMessage, strlen( pcBleMessage ), NULL);
-    sem_post(&sem);
+    //sem_post(&sem);
 
     return status;
 }
@@ -83,8 +95,20 @@ bStatus_t trans_uartEnable(void)
 bStatus_t trans_uartDisable(void)
 {
     bStatus_t status = SUCCESS;
-    UART2_close(trans_uartHandle);
-    // TODO: if trans_uartHandle not be set to NULL should manually assign
+    if(trans_uartHandle != NULL)
+    {
+        UART2_close(trans_uartHandle);
+        // TODO: if trans_uartHandle not be set to NULL should manually assign
+    }
+    return status;
+}
+
+bStatus_t trans_switchBackToCli(void)
+{
+    bStatus_t status;
+    status = UART2_write(trans_uartHandle, pcBackCliMessage, strlen( pcBackCliMessage ), NULL);
+    status |= trans_uartDisable();
+    status |= cli_uartEnable();
     return status;
 }
 
@@ -99,6 +123,12 @@ static bStatus_t trans_bleTransferUart(void)
     { /* UART2_read() failed */ while (1) {} }
 
     sem_wait(&sem); /* Do not write until read callback executes */
+
+    if(trans_modeStop)
+    {
+        // FIXME: issue - first time switch back should post semaphore one time.
+        status = trans_switchBackToCli();
+    }
 
     if (numBytesRead > 0)
     {
@@ -116,7 +146,7 @@ void *trans_uartThread(void *arg0)
     // IMPORTANT: Task should register to ICall app to access BLE function
     ICall_Errno icall_staus;
     icall_staus = ICall_registerAppCback(&trans_UartICallEntityID, trans_uartProcessMsgCB);
-    // FIXME: notify not able to use
+    // FIXED: notify not able to use
 
     int32_t semStatus;
     uint32_t status = UART2_STATUS_SUCCESS;
