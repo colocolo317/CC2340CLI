@@ -1,5 +1,5 @@
 /*
- * uartControl.c
+ * trans_uartControl.c
  *
  *  Created on: 2023/09/25
  *      Author: ch.wang
@@ -98,6 +98,7 @@ bStatus_t trans_uartDisable(void)
     if(trans_uartHandle != NULL)
     {
         UART2_close(trans_uartHandle);
+        trans_uartHandle = NULL;
         // TODO: if trans_uartHandle not be set to NULL should manually assign
     }
     return status;
@@ -105,10 +106,11 @@ bStatus_t trans_uartDisable(void)
 
 bStatus_t trans_switchBackToCli(void)
 {
-    bStatus_t status;
-    status = UART2_write(trans_uartHandle, pcBackCliMessage, strlen( pcBackCliMessage ), NULL);
+    bStatus_t status = SUCCESS;
+    status |= UART2_write(trans_uartHandle, pcBackCliMessage, strlen( pcBackCliMessage ), NULL);
     status |= trans_uartDisable();
     status |= cli_uartEnable();
+    status |= cli_resumeByPostSemaphore();
     return status;
 }
 
@@ -212,4 +214,9 @@ int_fast16_t trans_uartTxSend(uint8_t *pValue, uint16_t len)
 UART2_Handle trans_getUartHandle(void)
 {
     return trans_uartHandle;
+}
+
+int trans_resumeByPostSemaphore(void)
+{
+    return sem_post(&sem);
 }

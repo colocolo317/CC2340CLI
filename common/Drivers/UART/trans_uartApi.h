@@ -14,5 +14,6 @@ int_fast16_t trans_uartTxSend(uint8_t *pValue, uint16_t len);
 UART2_Handle trans_getUartHandle(void);
 bStatus_t trans_uartEnable(void);
 bStatus_t trans_uartDisable(void);
+int trans_resumeByPostSemaphore(void);
 
 #endif /* COMMON_DRIVERS_UART_TRANS_UARTAPI_H_ */

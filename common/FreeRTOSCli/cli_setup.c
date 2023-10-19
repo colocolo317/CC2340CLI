@@ -281,12 +281,14 @@ static BaseType_t prvAT_BLETRANMODEfxn( char *pcWriteBuffer,
                                         size_t xWriteBufferLen,
                                         const char *pcCommandString )
 {
+    bStatus_t status = SUCCESS;
     // Check BLE task is running
     // TODO: use BLEAppUtil_checkBLEstat() function get BLE status
     if (BLEAppUtil_theardEntity.threadId != NULL)
     {
-        cli_uartDisable();
-        trans_uartEnable();
+        status |= cli_uartDisable();
+        status |= trans_uartEnable();
+        status |= trans_resumeByPostSemaphore();
 
         cli_writeOK(pcWriteBuffer);
         return pdFALSE;
