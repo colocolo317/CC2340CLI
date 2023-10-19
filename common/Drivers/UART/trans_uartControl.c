@@ -42,7 +42,7 @@ static volatile size_t numBytesRead;
 static UART2_Handle trans_uartHandle = NULL;
 static UART2_Params trans_uartParams;
 ICall_EntityID trans_UartICallEntityID;
-static uint8_t trans_modeStop = true;
+static uint8_t trans_mode_on_off = TRANS_MODE_OFF;
 
 /* === Functions === */
 static bStatus_t trans_bleTransferUart(void);
@@ -63,7 +63,7 @@ void trans_uartRxCB(UART2_Handle handle, void *buffer, size_t count, void *userA
 
     if(!memcmp((char*)buffer, pcTransStopCmd, sizeof(pcTransStopCmd)))
     {
-        trans_modeStop = true;
+        trans_mode_on_off = TRANS_MODE_OFF;
     }
 
     numBytesRead = count;
@@ -83,12 +83,6 @@ bStatus_t trans_uartEnable(void)
     if (trans_uartHandle == NULL)
     { while (1) {} /* UART2_open() failed */ }
 
-    trans_modeStop = false;
-
-    static const char * const pcBleMessage = "\r\nBLE streaming start. Your input into UART is output to BLE.\r\n";
-    status = UART2_write(trans_uartHandle, pcBleMessage, strlen( pcBleMessage ), NULL);
-    //sem_post(&sem);
-
     return status;
 }
 
@@ -99,7 +93,6 @@ bStatus_t trans_uartDisable(void)
     {
         UART2_close(trans_uartHandle);
         trans_uartHandle = NULL;
-        // TODO: if trans_uartHandle not be set to NULL should manually assign
     }
     return status;
 }
@@ -110,6 +103,7 @@ bStatus_t trans_switchBackToCli(void)
     status |= UART2_write(trans_uartHandle, pcBackCliMessage, strlen( pcBackCliMessage ), NULL);
     status |= trans_uartDisable();
     status |= cli_uartEnable();
+    cli_setTransModeSwitchFlag(CLI_SWITCH_TRANS_OFF);
     status |= cli_resumeByPostSemaphore();
     return status;
 }
@@ -126,10 +120,10 @@ static bStatus_t trans_bleTransferUart(void)
 
     sem_wait(&sem); /* Do not write until read callback executes */
 
-    if(trans_modeStop)
+    if(trans_mode_on_off == TRANS_MODE_OFF)
     {
-        // FIXME: issue - first time switch back should post semaphore one time.
         status = trans_switchBackToCli();
+        return status;
     }
 
     if (numBytesRead > 0)
@@ -219,4 +213,9 @@ UART2_Handle trans_getUartHandle(void)
 int trans_resumeByPostSemaphore(void)
 {
     return sem_post(&sem);
+}
+
+void trans_modeSetSwitchFlag(uint8 onOff)
+{
+    trans_mode_on_off = onOff;
 }

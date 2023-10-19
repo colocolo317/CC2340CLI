@@ -13,6 +13,8 @@
 
 #define CLI_UART_NO_ECHO        (0)
 #define CLI_UART_ECHO           (1)
+#define CLI_SWITCH_TRANS_ON     true
+#define CLI_SWITCH_TRANS_OFF    false
 
 /**
  * Setup command list table
@@ -23,5 +25,6 @@ UART2_Handle cli_getUartHandle(void);
 bStatus_t cli_uartEnable(void);
 bStatus_t cli_uartDisable(void);
 int cli_resumeByPostSemaphore(void);
+void cli_setTransModeSwitchFlag(uint8 onOff);
 
 #endif /* COMMON_FREERTOSCLI_CLI_API_H_ */

@@ -116,7 +116,7 @@ void BLEAppUtil_init(ErrorHandler_t errorHandler, StackInitDone_t initDoneHandle
     bleStack_createTasks();
 
     // Create local app task
-    //BLEAppUtil_createBLEAppUtilTask();  //TODO: Let cli function start the task
+    //BLEAppUtil_createBLEAppUtilTask();  // DONE: Let cli function start the task
 
     // Construct a mutex that will be used by the following functions:
     // BLEAppUtil_registerEventHandler

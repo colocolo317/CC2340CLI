@@ -122,11 +122,10 @@ static void DS_incomingDataCB( uint16 connHandle, char *pValue, uint16 len )
     // Send error message over GATT notification
     status = DSP_sendData( (uint8 *)dataOut, sizeof( dataOut ) );
   }
-
   // New data received from peer device
   else
   {
-    int_fast16_t uart_status =  trans_uartTxSend((uint8*)pValue, len); // TODO: Finish UART streaming
+    int_fast16_t uart_status =  trans_uartTxSend((uint8*)pValue, len);
 
     // [Canceled] Change upper case to lower case and lower case to upper case
     // [Canceled] Echo the incoming data over GATT notification
@@ -146,7 +145,6 @@ bStatus_t DataStream_start( void )
 {
   bStatus_t status = SUCCESS;
 
-  // TODO: ds profile cb, ds server cb, tx, rx separate
   status = DSP_start( &ds_profileCB );
   if( status != SUCCESS )
   {

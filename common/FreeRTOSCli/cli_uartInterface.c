@@ -16,6 +16,7 @@
 #include "ti_drivers_config.h"
 #include "icall_ble_api.h"
 #include <common/FreeRTOSCli/cli_api.h>
+#include <common/Drivers/UART/trans_uartApi.h>
 
 /* Stack size in bytes */
 #define THREADSTACKSIZE 1024
@@ -26,6 +27,7 @@
 static uint8_t rxBuffer[MAX_INPUT_LENGTH];
 
 static const char * const pcCliMessage = "\r\nAmpak WL71340 AT-Command interface.\r\nType \"HELP\" to view a list of registered commands.\r\n";
+static const char * const pcTransModeMessage = "\r\nBLE streaming start. Your input into UART is output to BLE.\r\n";
 const char breakLine[] = "\r\n";
 const char backspace[] = "\b \b";
 /* === Local Variables ===*/
@@ -34,6 +36,7 @@ static volatile size_t numBytesRead;
 static UART2_Handle cli_uartHandle = NULL;
 static UART2_Params cli_uartParams;
 static uint8 uart_echo_onoff = CLI_UART_ECHO;
+static uint8 cli_uartGiveTransMode = CLI_SWITCH_TRANS_OFF;
 
 ICall_EntityID cli_uartICallEntityID;
 
@@ -44,6 +47,7 @@ void cli_uartRxCB(UART2_Handle handle, void *buffer, size_t count, void *userArg
 uint8_t cli_uartProcessMsgCB(uint8_t event, uint8_t *pMessage);
 
 static int_fast16_t cli_uartTxEcho(UART2_Handle handle, const void* pValue, size_t len , size_t *bytesWritten);
+bStatus_t cli_switchToTransMode(void);
 
 /*
  *  ======== callbackFxn ========
@@ -71,8 +75,6 @@ bStatus_t cli_uartEnable(void)
     if (cli_uartHandle == NULL)
     { while (1) {} /* UART2_open() failed */ }
 
-    //sem_post(&sem); // FIXME: cause malfunction
-
     return status;
 }
 
@@ -83,7 +85,6 @@ bStatus_t cli_uartDisable(void)
     {
         UART2_close(cli_uartHandle);
         cli_uartHandle = NULL;
-        // TODO: if cli_uartHandle not be set to NULL should manually assign
     }
     return status;
 }
@@ -109,6 +110,9 @@ static bStatus_t cli_uartCmdReceiver(void)
     {
         if(cRxedChar == '\r' || cRxedChar == '\n')
         {
+            if (strlen( pcInputString ) == 0)
+            { return status; } // in case null string input
+
             status = cli_uartTxEcho(cli_uartHandle, breakLine, 2, NULL);
             do{
                 // Send the command string to the command interpreter.
@@ -185,15 +189,31 @@ void *cli_uartConsoleThread(void *arg0)
     /* Loop forever echoing */
     while (1)
     {
+        if(cli_uartGiveTransMode)
+        {
+            status = cli_switchToTransMode();
+        }
+
         if(cli_uartHandle != NULL)
         {
             status = cli_uartCmdReceiver();
         }
         else
         {
-            sem_wait(&sem);  // TODO: Set new resume function post semaphore
+            sem_wait(&sem);
         }
     }
+}
+
+bStatus_t cli_switchToTransMode(void)
+{
+    bStatus_t status = SUCCESS;
+    status = UART2_write(cli_uartHandle, pcTransModeMessage, strlen( pcTransModeMessage ), NULL);
+    status |= cli_uartDisable();
+    status |= trans_uartEnable();
+    trans_modeSetSwitchFlag(TRANS_MODE_ON);
+    status |= trans_resumeByPostSemaphore();
+    return status;
 }
 
 uint8_t cli_uartProcessMsgCB(uint8_t event, uint8_t *pMessage)
@@ -265,4 +285,9 @@ UART2_Handle cli_getUartHandle(void)
 int cli_resumeByPostSemaphore(void)
 {
     return sem_post(&sem);
+}
+
+void cli_setTransModeSwitchFlag(uint8 onOff)
+{
+    cli_uartGiveTransMode = onOff;
 }

@@ -286,10 +286,7 @@ static BaseType_t prvAT_BLETRANMODEfxn( char *pcWriteBuffer,
     // TODO: use BLEAppUtil_checkBLEstat() function get BLE status
     if (BLEAppUtil_theardEntity.threadId != NULL)
     {
-        status |= cli_uartDisable();
-        status |= trans_uartEnable();
-        status |= trans_resumeByPostSemaphore();
-
+        cli_setTransModeSwitchFlag(CLI_SWITCH_TRANS_ON);
         cli_writeOK(pcWriteBuffer);
         return pdFALSE;
     }
