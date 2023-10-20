@@ -119,6 +119,8 @@ bStatus_t DSS_registerProfileCBs( DSS_cb_t *profileCallback );
  */
 bStatus_t DSS_setParameter( uint8 param, void *pValue, uint16 len);
 
+gattAttribute_t* DSS_getDefaultNotifyGatt(void);
+
 /*********************************************************************
 *********************************************************************/
 

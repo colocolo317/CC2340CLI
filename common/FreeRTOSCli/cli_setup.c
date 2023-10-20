@@ -5,6 +5,7 @@
  *      Author: ch.wang
  */
 
+#include <stdio.h>
 #include <FreeRTOS.h>
 #include "FreeRTOS_CLI.h"
 #include <string.h>
@@ -27,7 +28,7 @@ extern BLEAppUtil_TheardEntity_t BLEAppUtil_theardEntity;
 
 /* External function */
 extern int BLEAppUtil_createBLEAppUtilTask(void);
-extern void trans_uartStart(void);
+
 /* Local function */
 static inline void cli_writeError(char *pcWriteBuffer){ strcpy(pcWriteBuffer, "\r\nERROR\r\n"); }
 
@@ -61,7 +62,7 @@ static BaseType_t prvAT_BLETRANMODEfxn( char *pcWriteBuffer,
 static BaseType_t prvSTOPTRANMODEfxn( char *pcWriteBuffer,
                                         size_t xWriteBufferLen,
                                         const char *pcCommandString ); // "+++" command
-static BaseType_t prvAT_BLEGATTSNTFYfxn( char *pcWriteBuffer,
+static BaseType_t prvAT_BLEPERINTFYfxn( char *pcWriteBuffer,
                                           size_t xWriteBufferLen,
                                           const char *pcCommandString );
 static BaseType_t prvAT_BLEDISCONNfxn( char *pcWriteBuffer,
@@ -83,37 +84,37 @@ void cli_init(void){
     {
          {
             "AT+ECHO",
-            "AT+ECHO           : \r\n",
+            "AT+ECHO <enable>  : <enable>=1, turn on echo. <enable>=0 turn off echo.\r\n",
             prvAT_ECHOfxn,
             1
          },
          {
             "AT+BLESTART",
-            "AT+BLESTART       : Start BLE thread.\r\n",
+            "AT+BLESTART       : Start BLE default service with advertisement going on.\r\n",
             prvAT_BLESTARTfxn,
             0   // Could input role as argument
         },
         {
             "AT+BLEADDR",
-            "AT+BLEADDR        : Get device address.\r\n",
+            "AT+BLEADDR        : Show BLE address.\r\n",
             prvAT_BLEADDRfxn,
             0
         },
         {
             "AT+BLENAME",
-            "AT+BLENAME        : Get BLE name.\r\n",
+            "AT+BLENAME        : Show BLE name.\r\n",
             prvAT_BLENAMEfxn,
             0
         },
         {
             "AT+VERSION",
-            "AT+VERSION        : Get firmware version\r\n",
+            "AT+VERSION        : Show firmware version\r\n",
             prvAT_VERSIONfxn,
             0
         },
         {
             "AT+BLETRANMODE",
-            "AT+BLETRANMODE    : \r\n",
+            "AT+BLETRANMODE    : Start transparent mode between UART and characteristic 0xFFF1 & 0xFFF2. UART key in \"\\r\\n+++\\r\\n\" to stop.\r\n",
             prvAT_BLETRANMODEfxn,
             0
         },
@@ -124,26 +125,26 @@ void cli_init(void){
             0
         },
         {
-            "AT+BLEGATTSNTFY",
-            "AT+BLEGATTSNTFY   : \r\n",
-            prvAT_BLEGATTSNTFYfxn,
-            0
+            "AT+BLEPERINTFY",
+            "AT+BLEPERINTFY <stringNoQuote>: Peripheral role send notify to default UUID.\r\n",
+            prvAT_BLEPERINTFYfxn,
+            1
         },
         {
             "AT+BLEDISCONN",
-            "AT+BLEDISCONN     : \r\n",
+            "AT+BLEDISCONN     : BLE disconnect all links. \r\n",
             prvAT_BLEDISCONNfxn,
             0
         },
         {
             "AT+BLESTAT",
-            "AT+BLESTAT        : \r\n",
+            "AT+BLESTAT        : Show BLE status. \r\n",
             prvAT_BLESTATfxn,
             0
         },
         {
             "AT+RST",
-            "AT+RST            : \r\n",
+            "AT+RST            : Reset device immediately.\r\n",
             prvAT_RSTfxn,
             0
         }
@@ -178,10 +179,10 @@ static BaseType_t prvAT_ECHOfxn( char *pcWriteBuffer,
     switch(*pcParameter1)
     {
     case '0':
-        ret = cli_uartSetEchoOnOff(0);
+        ret = cli_uartSetEchoOnOff(CLI_UART_NO_ECHO);
         break;
     case '1':
-        ret = cli_uartSetEchoOnOff(1);
+        ret = cli_uartSetEchoOnOff(CLI_UART_ECHO);
         break;
     default:
         cli_writeError(pcWriteBuffer);
@@ -298,20 +299,34 @@ static BaseType_t prvSTOPTRANMODEfxn( char *pcWriteBuffer,
                                         size_t xWriteBufferLen,
                                         const char *pcCommandString )
 {
-    // trans_uartClose();
-    // cli_uartOpen();
+    // Will never come here.
+    // TODO: in no echo mode may need "OK" rsp here?
+    // trans_uartClose();  // cli_uartOpen();
     return pdFALSE;
 }
-static BaseType_t prvAT_BLEGATTSNTFYfxn( char *pcWriteBuffer,
+static BaseType_t prvAT_BLEPERINTFYfxn( char *pcWriteBuffer,
                                           size_t xWriteBufferLen,
                                           const char *pcCommandString )
 {
     bStatus_t status = SUCCESS;
-    status = DSS_setParameter( DSS_DATAOUT_ID, "AT+NOTIFY", 9 );
-    if(status == SUCCESS)
-    {
-        strcpy(pcWriteBuffer, "\r\nBLE update characteristic.\r\n");
-    }
+    gattAttribute_t* pAttr = DSS_getDefaultNotifyGatt();
+
+    if (pAttr == NULL)
+    { cli_writeError(pcWriteBuffer); return pdFALSE; }
+    if (pAttr->handle == 0)
+    { cli_writeError(pcWriteBuffer); return pdFALSE; }
+
+    const char *pcParameter1;
+    BaseType_t xParameter1StringLength;
+    pcParameter1 = FreeRTOS_CLIGetParameter(pcCommandString, 1, &xParameter1StringLength);
+    status = DSS_setParameter( DSS_DATAOUT_ID, (void*)pcParameter1, xParameter1StringLength );
+
+    if(status != SUCCESS)
+    { cli_writeError(pcWriteBuffer); return pdFALSE; }
+
+    cli_writeOK(pcWriteBuffer);
+    sprintf(pcWriteBuffer + strlen(pcWriteBuffer),"UUID: %02X%02X , handle: %04X\r\n", *(pAttr->type.uuid+1), *pAttr->type.uuid, pAttr->handle);
+
     return pdFALSE;
 }
 static BaseType_t prvAT_BLEDISCONNfxn( char *pcWriteBuffer,
@@ -331,8 +346,7 @@ static BaseType_t prvAT_BLEDISCONNfxn( char *pcWriteBuffer,
 
     if(status == SUCCESS){
         cli_writeOK(pcWriteBuffer);
-    }else
-    {
+    }else{
         cli_writeError(pcWriteBuffer);
     }
 
@@ -342,6 +356,8 @@ static BaseType_t prvAT_BLESTATfxn( char *pcWriteBuffer,
                                     size_t xWriteBufferLen,
                                     const char *pcCommandString )
 {
+    cli_writeOK(pcWriteBuffer);
+    sprintf(pcWriteBuffer+strlen(pcWriteBuffer), "BLE Role: , State:\r\nInit:  , Advertising:  , Connected: \r\n");
 
     return pdFALSE;
 }
@@ -354,6 +370,7 @@ static BaseType_t prvAT_RSTfxn( char *pcWriteBuffer,
     PMCTLResetSystem();
     return pdFALSE;
 }
+/*
 static BaseType_t prvAT_BLESTOPfxn( char *pcWriteBuffer,
                                           size_t xWriteBufferLen,
                                           const char *pcCommandString )
@@ -362,3 +379,4 @@ static BaseType_t prvAT_BLESTOPfxn( char *pcWriteBuffer,
     strcpy(pcWriteBuffer, "BLE stopped.");
     return pdFALSE;
 }
+*/

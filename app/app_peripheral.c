@@ -217,6 +217,7 @@ bStatus_t Peripheral_start()
     }
 
     status = BLEAppUtil_advStart(peripheralAdvHandle_1, &advSetStartParamsSet_1);
+    // TODO: set variable store the status result
     if(status != SUCCESS)
     {
         // Return status value

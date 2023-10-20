@@ -343,6 +343,11 @@ static bStatus_t DSS_writeAttrCB( uint16 connHandle,
   return ( status );
 }
 
+gattAttribute_t* DSS_getDefaultNotifyGatt(void)
+{
+    return GATTServApp_FindAttr(dss_attrTbl, GATT_NUM_ATTRS(dss_attrTbl), &dss_dataOut_val);
+}
+
 /*********************************************************************
  * @fn      DSS_sendNotification
  *
@@ -430,6 +435,8 @@ static bStatus_t DSS_sendNotification(uint8 *pValue, uint16 len)
   // Return status value
   return ( status );
 }
+
+
 
 /*********************************************************************
 *********************************************************************/

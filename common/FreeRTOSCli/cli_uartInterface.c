@@ -21,8 +21,8 @@
 /* Stack size in bytes */
 #define THREADSTACKSIZE 1024
 
-#define MAX_INPUT_LENGTH    50
-#define MAX_OUTPUT_LENGTH   100
+#define MAX_INPUT_LENGTH    256
+#define MAX_OUTPUT_LENGTH   512
 
 static uint8_t rxBuffer[MAX_INPUT_LENGTH];
 
@@ -45,7 +45,6 @@ void cli_uartConsoleStart(void);
 void *cli_uartConsoleThread(void *arg0);
 void cli_uartRxCB(UART2_Handle handle, void *buffer, size_t count, void *userArg, int_fast16_t status);
 uint8_t cli_uartProcessMsgCB(uint8_t event, uint8_t *pMessage);
-
 static int_fast16_t cli_uartTxEcho(UART2_Handle handle, const void* pValue, size_t len , size_t *bytesWritten);
 bStatus_t cli_switchToTransMode(void);
 
@@ -94,7 +93,7 @@ static bStatus_t cli_uartCmdReceiver(void)
     bStatus_t status = SUCCESS;
     char cRxedChar;
     static char pcOutputString[ MAX_OUTPUT_LENGTH ], pcInputString[ MAX_INPUT_LENGTH ];
-    static int8_t cInputIndex = 0;
+    static int cInputIndex = 0;
     BaseType_t xMoreDataToFollow;
 
     numBytesRead = 0;
@@ -257,6 +256,7 @@ static int_fast16_t cli_uartTxEcho(UART2_Handle handle, const void* pValue, size
     {
         return UART2_write(handle, pValue, len, NULL);
     }
+    // TODO: all uart2_write should be check again, transparent mode message should move here to CLI
     return 0;
 }
 
