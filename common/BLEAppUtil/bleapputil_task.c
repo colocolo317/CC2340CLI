@@ -21,6 +21,7 @@ $Release Date: PACKAGE RELEASE DATE $
  */
 #include <common/BLEAppUtil/inc/bleapputil_api.h>
 #include <ti/bleapp/ble_app_util/inc/bleapputil_internal.h>
+#include <app_main.h>
 
 /*********************************************************************
  * MACROS
@@ -92,6 +93,11 @@ int BLEAppUtil_createBLEAppUtilTask(void)
                              &param_attribute,
                              &BLEAppUtil_Task,
                              NULL);
+    if(retVal == 0)
+    {
+        monitor_updateState(APP_MONITOR_STATE_BLEINIT, MONITOR_BLE_INIT);
+    }
+
     return retVal;
 }
 

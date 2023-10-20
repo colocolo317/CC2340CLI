@@ -21,6 +21,7 @@ $Release Date: PACKAGE RELEASE DATE $
 #include <common/BLEAppUtil/inc/bleapputil_api.h>
 #include <ti/bleapp/ble_app_util/inc/bleapputil_internal.h>
 #include "ble_stack_api.h"
+#include <app_main.h>
 
 /*********************************************************************
  * MACROS
@@ -432,13 +433,20 @@ bStatus_t BLEAppUtil_initAdvSet(uint8 *advHandle, const BLEAppUtil_AdvInit_t *ad
 
 bStatus_t BLEAppUtil_advStart(uint8 handle, const BLEAppUtil_AdvStart_t *advStartInfo)
 {
-    return GapAdv_enable(handle, advStartInfo->enableOptions ,
+    bStatus_t status = GapAdv_enable(handle, advStartInfo->enableOptions ,
                          advStartInfo->durationOrMaxEvents);
+    if(status == SUCCESS)
+    {
+        monitor_updateState(APP_MONITOR_STATE_ADV_ON_OFF, MONITOR_ADV_ON);
+    }
+
+    return status;
 }
 
 bStatus_t BLEAppUtil_advStop(uint8 handle)
 {
-    return GapAdv_disable(handle);
+    monitor_updateState(APP_MONITOR_STATE_ADV_ON_OFF, MONITOR_ADV_OFF);
+    return GapAdv_disable(handle); // Return is not SUCCESS
 }
 
 

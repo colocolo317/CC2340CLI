@@ -23,7 +23,10 @@ $Release Date: PACKAGE RELEASE DATE $
 //*****************************************************************************
 //! Defines
 //*****************************************************************************
-
+#define MONITOR_ADV_OFF     (0)
+#define MONITOR_ADV_ON      (1)
+#define MONITOR_BLE_NOINIT  (0)
+#define MONITOR_BLE_INIT    (1)
 //*****************************************************************************
 //! Typedefs
 //*****************************************************************************
@@ -59,6 +62,22 @@ PACKED_ALIGNED_TYPEDEF_STRUCT
   BLEAppUtil_BDaddr peerAddress;    // The address of the peer device
 } App_connInfo;
 
+
+typedef struct
+{
+    char* role;
+    char* initYet;
+    char* advOnOff;
+    uint8 connNum;
+} AppMonitor_report_t;
+
+typedef enum
+{
+    APP_MONITOR_STATE_BLEROLE,
+    APP_MONITOR_STATE_BLEINIT,
+    APP_MONITOR_STATE_ADV_ON_OFF,
+    APP_MONITOR_STATE_CONN_NUM
+} AppMonitor_state_type_e;
 //*****************************************************************************
 //! Functions
 //*****************************************************************************
@@ -263,5 +282,8 @@ uint16_t Connection_getConnhandle(uint8_t index);
  *          if there is no match, LL_INACTIVE_CONNECTIONS will be returned.
  */
 uint16_t Connection_getConnIndex(uint16_t connHandle);
+
+AppMonitor_report_t monitor_getStateReport(void);
+void monitor_updateState(AppMonitor_state_type_e state_type, uint8 value);
 
 #endif /* APP_MAIN_H_ */

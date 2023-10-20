@@ -356,9 +356,21 @@ static BaseType_t prvAT_BLESTATfxn( char *pcWriteBuffer,
                                     size_t xWriteBufferLen,
                                     const char *pcCommandString )
 {
+    // FIXME: AT+BLESTAT can not invoke before AT+BLESTART, possibly because init() process.
+    // Check BLE task is running
+    // TODO: use BLEAppUtil_checkBLEstat() function get BLE status
+    if (BLEAppUtil_theardEntity.threadId != NULL)
+    {
+    AppMonitor_report_t report = monitor_getStateReport();
     cli_writeOK(pcWriteBuffer);
-    sprintf(pcWriteBuffer+strlen(pcWriteBuffer), "BLE Role: , State:\r\nInit:  , Advertising:  , Connected: \r\n");
-
+    sprintf(pcWriteBuffer+strlen(pcWriteBuffer),
+            "BLE Role: %s\r\nState - [ Init: %s ], [ Advertising: %s ], [ Connection(s): %d ]\r\n",
+            report.role, report.initYet, report.advOnOff, report.connNum);
+    }
+    else
+    {
+        cli_writeError(pcWriteBuffer);
+    }
     return pdFALSE;
 }
 static BaseType_t prvAT_RSTfxn( char *pcWriteBuffer,
