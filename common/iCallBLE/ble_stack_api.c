@@ -379,6 +379,12 @@ bStatus_t bleStk_initAdvSet(pfnBleStkAdvCB_t advCallback, uint8_t *advHandle,
   return status;
 }
 
+bStatus_t bleStk_setAdvParam(uint8 handle, GapAdv_ParamId_t paramID,
+		                           void *pValue)
+{
+	return GapAdv_setParam(handle, paramID, pValue);
+}
+
 #ifdef ERPC_SERVER
 //!< Advertising set payload pointer, first set [0..Max] is for ADV, second set [Max+1..2xMax] is for SCAN_RSP
 uint8_t  *localAdvPayload[AE_DEFAULT_NUM_ADV_SETS*2];

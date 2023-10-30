@@ -95,7 +95,7 @@ int BLEAppUtil_createBLEAppUtilTask(void)
                              NULL);
     if(retVal == 0)
     {
-        monitor_updateState(APP_MONITOR_STATE_BLEINIT, MONITOR_BLE_INIT);
+        Monitor_updateState(APP_MONITOR_STATE_BLEINIT, MONITOR_BLE_INIT);
     }
 
     return retVal;

@@ -117,7 +117,7 @@ void BLEAppUtil_init(ErrorHandler_t errorHandler, StackInitDone_t initDoneHandle
     bleStack_createTasks();
 
     // Create local app task
-    //BLEAppUtil_createBLEAppUtilTask();  // DONE: Let cli function start the task
+    BLEAppUtil_createBLEAppUtilTask();  // DONE: Let cli function start the task
 
     // Construct a mutex that will be used by the following functions:
     // BLEAppUtil_registerEventHandler
@@ -431,13 +431,19 @@ bStatus_t BLEAppUtil_initAdvSet(uint8 *advHandle, const BLEAppUtil_AdvInit_t *ad
                              advInitInfo->scanRespData);
 }
 
+bStatus_t BLEAppUtil_setAdvParam(uint8 handle, GapAdv_ParamId_t paramID,
+		                           void *pValue)
+{
+	return bleStk_setAdvParam(handle, paramID, pValue);
+}
+
 bStatus_t BLEAppUtil_advStart(uint8 handle, const BLEAppUtil_AdvStart_t *advStartInfo)
 {
     bStatus_t status = GapAdv_enable(handle, advStartInfo->enableOptions ,
                          advStartInfo->durationOrMaxEvents);
     if(status == SUCCESS)
     {
-        monitor_updateState(APP_MONITOR_STATE_ADV_ON_OFF, MONITOR_ADV_ON);
+        Monitor_updateState(APP_MONITOR_STATE_ADV_ON_OFF, MONITOR_ADV_ON);
     }
 
     return status;
@@ -445,7 +451,7 @@ bStatus_t BLEAppUtil_advStart(uint8 handle, const BLEAppUtil_AdvStart_t *advStar
 
 bStatus_t BLEAppUtil_advStop(uint8 handle)
 {
-    monitor_updateState(APP_MONITOR_STATE_ADV_ON_OFF, MONITOR_ADV_OFF);
+    Monitor_updateState(APP_MONITOR_STATE_ADV_ON_OFF, MONITOR_ADV_OFF);
     return GapAdv_disable(handle); // Return is not SUCCESS
 }
 

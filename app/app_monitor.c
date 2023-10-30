@@ -26,7 +26,7 @@ AppMonitor_report_t report =
      .connNum = 0
 };
 
-void monitor_updateState(AppMonitor_state_type_e state_type, uint8 value)
+void Monitor_updateState(AppMonitor_state_type_e state_type, uint8 value)
 {
     switch(state_type)
     {
@@ -47,7 +47,7 @@ void monitor_updateState(AppMonitor_state_type_e state_type, uint8 value)
     }
 }
 
-AppMonitor_report_t monitor_getStateReport(void)
+AppMonitor_report_t Monitor_getStateReport(void)
 {
     if(strlen(strRole) == 0)
     {
@@ -87,4 +87,25 @@ AppMonitor_report_t monitor_getStateReport(void)
     report.connNum = numConn;
 
     return report;
+}
+
+uint8 Monitor_getState(AppMonitor_state_type_e state_type)
+{
+	uint8 ret = 0;
+	switch(state_type)
+	{
+	case APP_MONITOR_STATE_BLEINIT:
+		ret = bleInit;
+		break;
+	case APP_MONITOR_STATE_ADV_ON_OFF:
+		ret = advState;
+		break;
+	case APP_MONITOR_STATE_CONN_NUM:
+		ret = numConn;
+		break;
+	default:
+		break;
+	}
+
+	return ret;
 }

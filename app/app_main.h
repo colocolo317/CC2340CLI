@@ -94,6 +94,11 @@ typedef enum
  */
 bStatus_t Peripheral_start(void);
 
+bStatus_t Peripheral_advStart(void);
+bStatus_t Peripheral_advRestart(void);
+bStatus_t Peripheral_advStop(void);
+bStatus_t Peripheral_setAdvParam(uint8 param_id, void* value);
+
 /*********************************************************************
  * @fn      Broadcaster_start
  *
@@ -283,7 +288,11 @@ uint16_t Connection_getConnhandle(uint8_t index);
  */
 uint16_t Connection_getConnIndex(uint16_t connHandle);
 
-AppMonitor_report_t monitor_getStateReport(void);
-void monitor_updateState(AppMonitor_state_type_e state_type, uint8 value);
+/*********************************************************************
+ * @module	Monitor
+ */
+AppMonitor_report_t Monitor_getStateReport(void);
+void Monitor_updateState(AppMonitor_state_type_e state_type, uint8 value);
+uint8 Monitor_getState(AppMonitor_state_type_e state_type);
 
 #endif /* APP_MAIN_H_ */

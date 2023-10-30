@@ -704,6 +704,9 @@ bStatus_t BLEAppUtil_invokeFunction(InvokeFromBLEAppUtilContext_t callback, char
  */
 bStatus_t BLEAppUtil_initAdvSet(uint8 *advHandle, const BLEAppUtil_AdvInit_t *advInitInfo);
 
+bStatus_t BLEAppUtil_setAdvParam(uint8 handle, GapAdv_ParamId_t paramID,
+		                           void *pValue);
+
 /**
  * @brief   Enable Advertising.
  *          This will attempt to enable advertising for a set identified by the handle. The advertising set must first be created with GapAdv_create.

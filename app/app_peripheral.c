@@ -216,16 +216,47 @@ bStatus_t Peripheral_start()
         return(status);
     }
 
-    status = BLEAppUtil_advStart(peripheralAdvHandle_1, &advSetStartParamsSet_1);
-    // TODO: set variable store the status result
-    if(status != SUCCESS)
-    {
+    // Done: Default not advertising
+    //status = BLEAppUtil_advStart(peripheralAdvHandle_1, &advSetStartParamsSet_1);
+    // Done: set monitor variable store the status result
+    //if(status != SUCCESS)
+    //{
         // Return status value
-        return(status);
-    }
+    //    return(status);
+    //}
 
     // Return status value
     return(status);
+}
+
+uint8 Peripheral_getAdvHandle(void)
+{
+	return peripheralAdvHandle_1;
+}
+
+bStatus_t Peripheral_advStart(void)
+{
+	return BLEAppUtil_advStart(peripheralAdvHandle_1, &advSetStartParamsSet_1);
+}
+
+bStatus_t Peripheral_advRestart(void)
+{
+	bStatus_t status = SUCCESS;
+	BLEAppUtil_advStop(peripheralAdvHandle_1); // could return not SUCCESS
+	status = BLEAppUtil_advStart(peripheralAdvHandle_1, &advSetStartParamsSet_1);
+	return status;
+}
+
+bStatus_t Peripheral_advStop(void)
+{
+	bStatus_t status = SUCCESS;
+	status = BLEAppUtil_advStop(peripheralAdvHandle_1); // could return not SUCCESS
+	return status;
+}
+
+bStatus_t Peripheral_setAdvParam(uint8 param_id, void* pValue)
+{
+	return BLEAppUtil_setAdvParam(peripheralAdvHandle_1, param_id, pValue);
 }
 
 #endif // ( HOST_CONFIG & ( PERIPHERAL_CFG ) )

@@ -90,7 +90,7 @@ void Connection_ConnEventHandler(uint32 event, BLEAppUtil_msgHdr_t *pMsgData)
             // Add the connection to the connected device list
             Connection_addConnInfo(gapEstMsg->connectionHandle, gapEstMsg->devAddr);
 
-            monitor_updateState(APP_MONITOR_STATE_CONN_NUM, linkDB_NumActive());
+            Monitor_updateState(APP_MONITOR_STATE_CONN_NUM, linkDB_NumActive());
 
             /*! Print the peer address and connection handle number */
             MenuModule_printf(APP_MENU_CONN_EVENT, 0, "Conn status: Established - "
@@ -113,7 +113,7 @@ void Connection_ConnEventHandler(uint32 event, BLEAppUtil_msgHdr_t *pMsgData)
             // Remove the connection from the conneted device list
             Connection_removeConnInfo(gapTermMsg->connectionHandle);
 
-            monitor_updateState(APP_MONITOR_STATE_CONN_NUM, linkDB_NumActive());
+            Monitor_updateState(APP_MONITOR_STATE_CONN_NUM, linkDB_NumActive());
 
             /*! Print the peer address and connection handle number */
             MenuModule_printf(APP_MENU_CONN_EVENT, 0, "Conn status: Terminated - "
